@@ -582,7 +582,7 @@ fun CombatLogPanel(state: GameUiState, vm: GameViewModel) {
 fun BlessingOverlay(state: GameUiState, vm: GameViewModel) {
     Box(
         modifier = Modifier
-            .matchParentSize()
+            .fillMaxSize()
             .clip(RoundedCornerShape(14.dp))
             .background(Color(0xF7050E0E)),
         contentAlignment = Alignment.Center
@@ -628,7 +628,7 @@ fun BlessingOverlay(state: GameUiState, vm: GameViewModel) {
 fun RelicChestOverlay(state: GameUiState, vm: GameViewModel) {
     Box(
         modifier = Modifier
-            .matchParentSize()
+            .fillMaxSize()
             .clip(RoundedCornerShape(14.dp))
             .background(Color(0xF7050E0E)),
         contentAlignment = Alignment.Center
@@ -686,7 +686,7 @@ fun MilestoneRelicOverlay(state: GameUiState, vm: GameViewModel) {
     val mr = state.milestoneRelic ?: return
     Box(
         modifier = Modifier
-            .matchParentSize()
+            .fillMaxSize()
             .clip(RoundedCornerShape(14.dp))
             .background(Color(0xF7050E0E)),
         contentAlignment = Alignment.Center
@@ -724,7 +724,7 @@ fun MilestoneRelicOverlay(state: GameUiState, vm: GameViewModel) {
 fun DeadOverlay(state: GameUiState, vm: GameViewModel) {
     Box(
         modifier = Modifier
-            .matchParentSize()
+            .fillMaxSize()
             .clip(RoundedCornerShape(14.dp))
             .background(Color(0xF7050E0E)),
         contentAlignment = Alignment.Center
