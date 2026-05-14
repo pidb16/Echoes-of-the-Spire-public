@@ -1,0 +1,608 @@
+package com.echoes.spire.ui
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.echoes.spire.data.*
+import com.echoes.spire.game.AppScreen
+import com.echoes.spire.game.GameUiState
+import com.echoes.spire.game.GameViewModel
+import com.echoes.spire.game.HubTab
+import com.echoes.spire.ui.components.UpgradeRow
+import com.echoes.spire.ui.theme.*
+
+@Composable
+fun HubScreen(state: GameUiState, vm: GameViewModel) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Scrollable content
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 12.dp, vertical = 10.dp)
+                .padding(bottom = 8.dp)
+        ) {
+            when (state.hubTab) {
+                HubTab.EXPEDITION -> ExpeditionTab(state, vm)
+                HubTab.FORGE      -> ForgeTab(state, vm)
+                HubTab.RESEARCH   -> ResearchTab(state, vm)
+                HubTab.PRESTIGE   -> PrestigeTab(state, vm)
+                HubTab.RIFT       -> RiftTab(state, vm)
+            }
+        }
+
+        // Bottom navigation
+        BottomNav(state, vm)
+    }
+}
+
+// ─── Bottom Nav ───────────────────────────────────────────────────────────────
+
+@Composable
+fun BottomNav(state: GameUiState, vm: GameViewModel) {
+    val tabs = listOf(
+        Triple(HubTab.EXPEDITION, "⚔️", "Expedition"),
+        Triple(HubTab.FORGE,      "🔨", "Forge"),
+        Triple(HubTab.RESEARCH,   "🔬", "Research"),
+        Triple(HubTab.PRESTIGE,   "🎀", "Astral"),
+        Triple(HubTab.RIFT,       "🌌", "Rift")
+    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xF207080f))
+            .border(
+                width = 1.dp,
+                color = Color(0x336366f1),
+                shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp)
+            )
+            .padding(vertical = 6.dp),
+        horizontalArrangement = Arrangement.SpaceAround,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        tabs.forEach { (tab, icon, label) ->
+            val active = state.hubTab == tab
+            Column(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(if (active) Color(0x2E6366f1) else Color.Transparent)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { vm.setHubTab(tab) }
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                    .defaultMinSize(minWidth = 52.dp, minHeight = 44.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(icon, fontSize = 20.sp)
+                Text(
+                    text = label,
+                    color = if (active) Color(0xFFc4b5fd) else TextMuted,
+                    fontSize = 9.sp,
+                    fontWeight = if (active) FontWeight.Bold else FontWeight.Normal
+                )
+            }
+        }
+    }
+}
+
+// ─── Expedition Tab ───────────────────────────────────────────────────────────
+
+@Composable
+fun ExpeditionTab(state: GameUiState, vm: GameViewModel) {
+    Text(
+        text = "Choose class and begin the climb.",
+        color = TextSecondary, fontSize = 11.sp,
+        modifier = Modifier.fillMaxWidth().padding(bottom = 9.dp),
+        textAlign = TextAlign.Center
+    )
+
+    // Class grid
+    val classList = CLASSES.entries.toList()
+    for (row in classList.chunked(2)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 7.dp),
+            horizontalArrangement = Arrangement.spacedBy(7.dp)
+        ) {
+            row.forEach { (id, cls) ->
+                val active = state.selClass == id
+                ClassCard(
+                    id = id, cls = cls, active = active,
+                    modifier = Modifier.weight(1f),
+                    onClick = { vm.setSelClass(id) }
+                )
+            }
+            if (row.size < 2) Spacer(modifier = Modifier.weight(1f))
+        }
+    }
+
+    // Weapon selector
+    GlassCard(modifier = Modifier.fillMaxWidth().padding(bottom = 9.dp)) {
+        Text(
+            text = "⚔️ WEAPON",
+            color = AccentIndigo, fontSize = 9.sp,
+            letterSpacing = 2.sp,
+            modifier = Modifier.padding(bottom = 7.dp)
+        )
+        val weaponList = WEAPONS.entries.toList()
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 5.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            weaponList.take(4).forEach { (id, w) ->
+                WeaponTile(
+                    id = id, w = w,
+                    selected = state.selWeapon == id,
+                    modifier = Modifier.weight(1f),
+                    onClick = { vm.setSelWeapon(id) }
+                )
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            weaponList.drop(4).forEach { (id, w) ->
+                WeaponTile(
+                    id = id, w = w,
+                    selected = state.selWeapon == id,
+                    modifier = Modifier.weight(1f),
+                    onClick = { vm.setSelWeapon(id) }
+                )
+            }
+        }
+        WEAPONS[state.selWeapon]?.desc?.let { desc ->
+            Text(
+                text = desc,
+                color = TextSecondary, fontSize = 10.sp,
+                modifier = Modifier.padding(top = 7.dp)
+            )
+        }
+    }
+
+    // Oracle path
+    GlassCard(modifier = Modifier.fillMaxWidth().padding(bottom = 9.dp)) {
+        Text(
+            text = "🔮 ORACLE PATH",
+            color = AccentIndigo, fontSize = 9.sp,
+            letterSpacing = 2.sp,
+            modifier = Modifier.padding(bottom = 7.dp)
+        )
+        val paths = listOf(
+            Triple("balanced", "⚖️", "Balanced"),
+            Triple("gold",     "💰", "Gold"),
+            Triple("relics",   "🎁", "Relics"),
+            Triple("elite",    "👹", "Elites")
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            paths.forEach { (id, icon, label) ->
+                val active = state.oracle1 == id
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (active) Color(0x336366f1) else Color.Transparent)
+                        .border(
+                            1.dp,
+                            if (active) AccentIndigo else Color(0xFF1e293b),
+                            RoundedCornerShape(8.dp)
+                        )
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { vm.setOracle1(id) }
+                        .padding(7.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(icon, fontSize = 14.sp)
+                    Text(label, color = Color(0xFF94a3b8), fontSize = 8.sp, modifier = Modifier.padding(top = 2.dp))
+                }
+            }
+        }
+    }
+
+    // Corruption notice
+    if (state.corruption > 0) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 9.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color(0x0AFFFFFF))
+                .border(1.dp, Color(0x667c3aed), RoundedCornerShape(12.dp))
+                .padding(8.dp)
+        ) {
+            Text(
+                text = "☠️ Corruption ${state.corruption}: +${state.corruption * 30}% harder · +${state.corruption * 25}% loot",
+                color = Color(0xFFc4b5fd), fontSize = 11.sp
+            )
+        }
+    }
+
+    // Start buttons
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Button(
+            onClick = { vm.startRun() },
+            modifier = Modifier.weight(1f).defaultMinSize(minHeight = 48.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4f46e5))
+        ) {
+            Text("⚔️ Expedition", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+        }
+        Button(
+            onClick = { vm.startDailyRun() },
+            modifier = Modifier.weight(1f).defaultMinSize(minHeight = 48.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF065f46))
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("📅 Daily", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                Text("Best F${state.dailyBest}", fontSize = 9.sp, color = Color(0xFFa7f3d0))
+            }
+        }
+    }
+
+    // Ascend button
+    if (state.totalRuns >= 3 && state.souls >= 400) {
+        Button(
+            onClick = { vm.setScreen(AppScreen.ASCEND) },
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp).defaultMinSize(minHeight = 44.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF78350f))
+        ) {
+            Text("🌅 Ascend — ×2.5 Ancient Power", color = Color(0xFFfef3c7), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+        }
+    }
+
+    // Stats
+    GlassCard(modifier = Modifier.fillMaxWidth().padding(bottom = 9.dp)) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text("Runs: ${state.totalRuns}", color = TextSecondary, fontSize = 10.sp)
+                Text("Ascensions: ${state.ascensions}", color = TextSecondary, fontSize = 10.sp)
+                Text("Daily: F${state.dailyBest}", color = TextSecondary, fontSize = 10.sp)
+            }
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text("Best: F${state.bestFloor}", color = TextSecondary, fontSize = 10.sp)
+                Text("AP: ×${String.format("%.1f", state.ancPow)}", color = TextSecondary, fontSize = 10.sp)
+                Text("Rift: ${if (state.riftUnlocked) "🌌 Open" else "F100"}", color = TextSecondary, fontSize = 10.sp)
+            }
+        }
+    }
+
+    // Run history
+    if (state.runHistory.isNotEmpty()) {
+        Text(
+            text = "RECENT RUNS",
+            color = Color(0xFF334155), fontSize = 9.sp,
+            letterSpacing = 2.sp,
+            modifier = Modifier.padding(bottom = 5.dp)
+        )
+        state.runHistory.take(3).forEach { rec ->
+            GlassCard(modifier = Modifier.fillMaxWidth().padding(bottom = 5.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(CLASSES[rec.cls]?.icon ?: "⚔️", fontSize = 16.sp)
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "${CLASSES[rec.cls]?.name} · ${WEAPONS[rec.weapon]?.icon}",
+                            color = Color(0xFFc4b5fd), fontSize = 10.sp
+                        )
+                        Text(
+                            text = "${rec.date} · ${rec.kills} kills",
+                            color = TextSecondary, fontSize = 9.sp
+                        )
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text("F${rec.floor}", color = Color(0xFF818cf8), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text("💰${fmtN(rec.gold)} 💜${fmtN(rec.souls)}", color = TextSecondary, fontSize = 9.sp)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ─── Forge Tab ────────────────────────────────────────────────────────────────
+
+@Composable
+fun ForgeTab(state: GameUiState, vm: GameViewModel) {
+    Text(
+        text = "Permanent weapon upgrades. Costs scale exponentially.",
+        color = TextSecondary, fontSize = 11.sp,
+        modifier = Modifier.fillMaxWidth().padding(bottom = 9.dp),
+        textAlign = TextAlign.Center
+    )
+    FORGE_ITEMS.forEach { item ->
+        UpgradeRow(
+            icon = item.icon,
+            name = item.name,
+            desc = item.desc,
+            level = state.forge[item.id] ?: 0,
+            maxLevel = item.maxLv,
+            cost = item.cost(state.forge[item.id] ?: 0),
+            currency = "💰",
+            balance = state.gold,
+            accent = Color(0xFF4f46e5),
+            onBuy = { vm.buyForge(item) }
+        )
+    }
+}
+
+// ─── Research Tab ─────────────────────────────────────────────────────────────
+
+@Composable
+fun ResearchTab(state: GameUiState, vm: GameViewModel) {
+    Text(
+        text = "Permanent character upgrades. Costs scale exponentially.",
+        color = TextSecondary, fontSize = 11.sp,
+        modifier = Modifier.fillMaxWidth().padding(bottom = 9.dp),
+        textAlign = TextAlign.Center
+    )
+    RESEARCH_ITEMS.forEach { item ->
+        UpgradeRow(
+            icon = item.icon,
+            name = item.name,
+            desc = item.desc,
+            level = state.research[item.id] ?: 0,
+            maxLevel = item.maxLv,
+            cost = item.cost(state.research[item.id] ?: 0),
+            currency = "💜",
+            balance = state.souls,
+            accent = Color(0xFF7c3aed),
+            onBuy = { vm.buyResearch(item) }
+        )
+    }
+}
+
+// ─── Prestige Tab ─────────────────────────────────────────────────────────────
+
+@Composable
+fun PrestigeTab(state: GameUiState, vm: GameViewModel) {
+    // Ribbon info header
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 11.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0x0A34d399))
+            .border(1.dp, RibbonGreen, RoundedCornerShape(12.dp))
+            .padding(10.dp)
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+            Text("🎀 Astral Ribbons: ${state.ribbons}", color = RibbonGreen, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+            Text(
+                text = "Earned by reaching Floor 100. Costs scale with owned skills.",
+                color = TextSecondary, fontSize = 10.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 3.dp)
+            )
+        }
+    }
+
+    PRESTIGE_SKILLS.forEach { sk ->
+        val owned = state.prestige.contains(sk.id)
+        val dCost = sk.baseCost + state.prestige.size
+        val canBuy = !owned && state.ribbons >= dCost
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 6.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color(0x09FFFFFF))
+                .border(
+                    1.dp,
+                    if (owned) RibbonGreen else BorderColor,
+                    RoundedCornerShape(12.dp)
+                )
+                .padding(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(sk.icon, fontSize = 20.sp)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = if (owned) "${sk.name} ✓" else sk.name,
+                    color = if (owned) RibbonGreen else TextPrimary,
+                    fontWeight = FontWeight.Bold, fontSize = 11.sp
+                )
+                Text(sk.desc, color = TextSecondary, fontSize = 10.sp)
+                if (!owned) {
+                    Text(
+                        text = "🎀$dCost (base ${sk.baseCost}+${state.prestige.size})",
+                        color = TextMuted, fontSize = 8.sp
+                    )
+                }
+            }
+            Button(
+                onClick = { vm.buyPrestige(sk) },
+                enabled = canBuy,
+                shape = RoundedCornerShape(8.dp),
+                contentPadding = PaddingValues(horizontal = 11.dp, vertical = 0.dp),
+                modifier = Modifier.defaultMinSize(minWidth = 50.dp, minHeight = 44.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (canBuy) Color(0xFF065f46) else Color(0xFF1e293b),
+                    contentColor   = if (canBuy) RibbonGreen else if (owned) RibbonGreen else Color(0xFF374151),
+                    disabledContainerColor = Color(0xFF1e293b),
+                    disabledContentColor   = if (owned) RibbonGreen else Color(0xFF374151)
+                )
+            ) {
+                Text(
+                    text = if (owned) "✓" else "🎀$dCost",
+                    fontSize = 11.sp, fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
+
+// ─── Rift Tab ─────────────────────────────────────────────────────────────────
+
+@Composable
+fun RiftTab(state: GameUiState, vm: GameViewModel) {
+    if (!state.riftUnlocked) {
+        Box(
+            modifier = Modifier.fillMaxWidth().padding(30.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "🔒 Reach Floor 100 to unlock the Infinite Rift.",
+                color = Color(0xFF334155), fontSize = 13.sp,
+                textAlign = TextAlign.Center
+            )
+        }
+    } else {
+        GlassCard(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+            borderColor = Color(0x667c3aed)
+        ) {
+            Text("☠️ Corruption: ${state.corruption}", color = Color(0xFFc4b5fd), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            Text(
+                text = "+30%/tier enemy power · +25%/tier loot",
+                color = TextSecondary, fontSize = 10.sp,
+                modifier = Modifier.padding(bottom = 9.dp)
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(9.dp)
+            ) {
+                Button(
+                    onClick = { vm.setCorruption(state.corruption - 1) },
+                    modifier = Modifier.weight(1f).defaultMinSize(minHeight = 44.dp),
+                    shape = RoundedCornerShape(9.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1e293b))
+                ) {
+                    Text("− Lower", color = Color(0xFF94a3b8), fontSize = 12.sp)
+                }
+                Button(
+                    onClick = { vm.setCorruption(state.corruption + 1) },
+                    modifier = Modifier.weight(1f).defaultMinSize(minHeight = 44.dp),
+                    shape = RoundedCornerShape(9.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF4c1d95)
+                    )
+                ) {
+                    Text("+ Raise", color = Color.White, fontSize = 12.sp)
+                }
+            }
+        }
+
+        GlassCard(modifier = Modifier.fillMaxWidth()) {
+            Text("🏆 LEADERBOARD", color = AccentIndigo, fontSize = 9.sp, letterSpacing = 1.sp, modifier = Modifier.padding(bottom = 4.dp))
+            Text("Best: F${state.bestFloor}", color = TextSecondary, fontSize = 10.sp)
+            Text("Daily: F${state.dailyBest}", color = TextSecondary, fontSize = 10.sp)
+            Text("AP: ×${String.format("%.2f", state.ancPow)}", color = TextSecondary, fontSize = 10.sp)
+            Text("Runs: ${state.totalRuns}", color = TextSecondary, fontSize = 10.sp)
+        }
+    }
+}
+
+// ─── Shared Composables ───────────────────────────────────────────────────────
+
+@Composable
+fun ClassCard(
+    id: String,
+    cls: ClassDef,
+    active: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0x14FFFFFF))
+            .border(
+                width = 2.dp,
+                color = if (active) AccentIndigo else Color(0x1F6366f1),
+                shape = RoundedCornerShape(12.dp)
+            )
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { onClick() }
+            .padding(10.dp)
+    ) {
+        Column {
+            Text(cls.icon, fontSize = 20.sp)
+            Text(cls.name, color = Color(0xFFc4b5fd), fontWeight = FontWeight.Bold, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
+            Text(cls.desc, color = TextSecondary, fontSize = 9.sp, modifier = Modifier.padding(top = 2.dp), lineHeight = 12.sp)
+            Row(modifier = Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text("❤️${cls.hp}", color = HpLow, fontSize = 9.sp)
+                Text("⚔️${cls.atk}", color = GoldColor, fontSize = 9.sp)
+                Text("🛡️${cls.def}", color = Color(0xFF60a5fa), fontSize = 9.sp)
+            }
+        }
+    }
+}
+
+@Composable
+fun WeaponTile(
+    id: String,
+    w: WeaponDef,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (selected) Color(0x386366f1) else Color(0x08FFFFFF))
+            .border(
+                1.dp,
+                if (selected) AccentIndigo else Color(0xFF1e293b),
+                RoundedCornerShape(8.dp)
+            )
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { onClick() }
+            .padding(vertical = 7.dp, horizontal = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(w.icon, fontSize = 18.sp)
+        Text(w.name, color = Color(0xFF94a3b8), fontSize = 8.sp, modifier = Modifier.padding(top = 2.dp), textAlign = TextAlign.Center)
+    }
+}
+
+@Composable
+fun GlassCard(
+    modifier: Modifier = Modifier,
+    borderColor: Color = BorderColor,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0x14FFFFFF))
+            .border(1.dp, borderColor, RoundedCornerShape(12.dp))
+            .padding(10.dp)
+    ) {
+        content()
+    }
+}
