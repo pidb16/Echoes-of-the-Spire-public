@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,10 +20,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.echoes.spire.R
 import com.echoes.spire.data.*
 import com.echoes.spire.game.AppScreen
 import com.echoes.spire.game.GameUiState
@@ -30,6 +33,28 @@ import com.echoes.spire.game.GameViewModel
 import com.echoes.spire.game.HubTab
 import com.echoes.spire.ui.components.UpgradeRow
 import com.echoes.spire.ui.theme.*
+
+fun heroDrawableRes(classId: String): Int = when (classId) {
+    "wanderer"    -> R.drawable.hero_wanderer
+    "arcanist"    -> R.drawable.hero_arcanist
+    "pyromancer"  -> R.drawable.hero_pyromancer
+    "ironclad"    -> R.drawable.hero_ironclad
+    "paladin"     -> R.drawable.hero_paladin
+    "shadowblade" -> R.drawable.hero_shadowblade
+    "spellblade"  -> R.drawable.hero_spellblade
+    else          -> R.drawable.hero_wanderer
+}
+
+@Composable
+fun OrnateCard(modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
+    Box(modifier = modifier) {
+        content()
+        Image(painterResource(R.drawable.ic_corner_tl), null, modifier = Modifier.size(20.dp).align(Alignment.TopStart))
+        Image(painterResource(R.drawable.ic_corner_tr), null, modifier = Modifier.size(20.dp).align(Alignment.TopEnd))
+        Image(painterResource(R.drawable.ic_corner_bl), null, modifier = Modifier.size(20.dp).align(Alignment.BottomStart))
+        Image(painterResource(R.drawable.ic_corner_br), null, modifier = Modifier.size(20.dp).align(Alignment.BottomEnd))
+    }
+}
 
 @Composable
 fun HubScreen(state: GameUiState, vm: GameViewModel) {
@@ -147,20 +172,24 @@ fun ExpeditionTab(state: GameUiState, vm: GameViewModel) {
 
     // Class grid
     val classList = CLASSES.entries.toList()
-    for (row in classList.chunked(2)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 7.dp),
-            horizontalArrangement = Arrangement.spacedBy(7.dp)
-        ) {
-            row.forEach { (id, cls) ->
-                val active = state.selClass == id
-                ClassCard(
-                    id = id, cls = cls, active = active,
-                    modifier = Modifier.weight(1f),
-                    onClick = { vm.setSelClass(id) }
-                )
+    OrnateCard(modifier = Modifier.fillMaxWidth().padding(bottom = 9.dp)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(4.dp)) {
+            for (row in classList.chunked(2)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 7.dp),
+                    horizontalArrangement = Arrangement.spacedBy(7.dp)
+                ) {
+                    row.forEach { (id, cls) ->
+                        val active = state.selClass == id
+                        ClassCard(
+                            id = id, cls = cls, active = active,
+                            modifier = Modifier.weight(1f),
+                            onClick = { vm.setSelClass(id) }
+                        )
+                    }
+                    if (row.size < 2) Spacer(modifier = Modifier.weight(1f))
+                }
             }
-            if (row.size < 2) Spacer(modifier = Modifier.weight(1f))
         }
     }
 
@@ -585,7 +614,11 @@ fun ClassCard(
             .padding(10.dp)
     ) {
         Column {
-            Text(cls.icon, fontSize = 20.sp)
+            Image(
+                painter = painterResource(heroDrawableRes(id)),
+                contentDescription = cls.name,
+                modifier = Modifier.size(80.dp).clip(RoundedCornerShape(8.dp))
+            )
             Text(cls.name, color = Color(0xFFc4b5fd), fontWeight = FontWeight.Bold, fontSize = 11.sp,
                 modifier = Modifier.padding(top = 2.dp))
             Text(cls.desc, color = TextSecondary, fontSize = 9.sp,

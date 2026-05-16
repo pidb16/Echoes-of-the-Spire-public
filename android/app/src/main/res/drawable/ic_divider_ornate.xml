@@ -1,0 +1,16 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp" android:height="12dp"
+    android:viewportWidth="200" android:viewportHeight="12">
+  <!-- Left line -->
+  <path android:pathData="M0,6 L88,6" android:strokeColor="#1e293b" android:strokeWidth="1" android:fillColor="#00000000"/>
+  <path android:pathData="M0,6 L80,6" android:strokeColor="#334155" android:strokeWidth="0.5" android:fillColor="#00000000"/>
+  <!-- Center diamond -->
+  <path android:pathData="M100,1 L106,6 L100,11 L94,6 Z" android:fillColor="#6366f1"/>
+  <path android:pathData="M100,3 L104,6 L100,9 L96,6 Z" android:fillColor="#818cf8"/>
+  <!-- Small side diamonds -->
+  <path android:pathData="M88,4 L92,6 L88,8 L84,6 Z" android:fillColor="#334155"/>
+  <path android:pathData="M112,4 L116,6 L112,8 L108,6 Z" android:fillColor="#334155"/>
+  <!-- Right line -->
+  <path android:pathData="M112,6 L200,6" android:strokeColor="#1e293b" android:strokeWidth="1" android:fillColor="#00000000"/>
+  <path android:pathData="M120,6 L200,6" android:strokeColor="#334155" android:strokeWidth="0.5" android:fillColor="#00000000"/>
+</vector>

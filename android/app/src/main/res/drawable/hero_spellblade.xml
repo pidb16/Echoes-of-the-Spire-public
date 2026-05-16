@@ -1,0 +1,55 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp" android:height="160dp"
+    android:viewportWidth="100" android:viewportHeight="160">
+  <!-- Background — cyan teal dark -->
+  <path android:pathData="M50,80 m-60,0 a60,80 0 1,0 120,0 a60,80 0 1,0 -120,0" android:fillColor="#042020"/>
+  <path android:pathData="M50,80 m-35,0 a35,50 0 1,0 70,0 a35,50 0 1,0 -70,0" android:fillColor="#021515"/>
+  <!-- Energy aura -->
+  <path android:pathData="M50,80 m-30,0 a30,45 0 1,0 60,0 a30,45 0 1,0 -60,0" android:fillColor="#00000000" android:strokeColor="#22d3ee" android:strokeWidth="0.8"/>
+  <path android:pathData="M50,80 m-22,0 a22,35 0 1,0 44,0 a22,35 0 1,0 -44,0" android:fillColor="#00000000" android:strokeColor="#06b6d4" android:strokeWidth="0.5"/>
+  <!-- Light cloak -->
+  <path android:pathData="M34,65 Q20,88 22,148 L45,148 L50,130 L55,148 L78,148 Q80,88 66,65 Z" android:fillColor="#164e63"/>
+  <path android:pathData="M38,67 Q26,88 28,148 L45,148 L50,132 L55,148 L72,148 Q74,88 62,67 Z" android:fillColor="#0e7490"/>
+  <!-- Body -->
+  <path android:pathData="M38,62 L62,62 L64,100 L50,105 L36,100 Z" android:fillColor="#0c4a6e"/>
+  <!-- Arcane circuit lines on armor -->
+  <path android:pathData="M42,68 L58,68" android:strokeColor="#22d3ee" android:strokeWidth="0.8" android:fillColor="#00000000"/>
+  <path android:pathData="M40,78 L44,68 L56,68 L60,78 L56,88 L44,88 Z" android:strokeColor="#06b6d4" android:strokeWidth="0.6" android:fillColor="#00000000"/>
+  <!-- Shoulders -->
+  <path android:pathData="M28,60 Q24,50 30,46 Q38,44 40,54 L38,64 Z" android:fillColor="#0e7490"/>
+  <path android:pathData="M72,60 Q76,50 70,46 Q62,44 60,54 L62,64 Z" android:fillColor="#0e7490"/>
+  <!-- Head -->
+  <path android:pathData="M50,30 m-11,0 a11,13 0 1,0 22,0 a11,13 0 1,0 -22,0" android:fillColor="#0c4a6e"/>
+  <!-- Hair with cyan streak -->
+  <path android:pathData="M39,24 Q35,14 42,10 Q46,18 42,26 Z" android:fillColor="#164e63"/>
+  <path android:pathData="M42,22 Q40,14 44,10 Q46,16 44,22 Z" android:fillColor="#22d3ee"/>
+  <path android:pathData="M58,22 Q60,14 56,10 Q54,16 56,22 Z" android:fillColor="#22d3ee"/>
+  <!-- Face -->
+  <path android:pathData="M40,33 Q50,38 60,33 Q58,42 50,44 Q42,42 40,33 Z" android:fillColor="#021515"/>
+  <!-- Glowing cyan eyes -->
+  <path android:pathData="M44,36 m-2.5,0 a2.5,2 0 1,0 5,0 a2.5,2 0 1,0 -5,0" android:fillColor="#22d3ee"/>
+  <path android:pathData="M56,36 m-2.5,0 a2.5,2 0 1,0 5,0 a2.5,2 0 1,0 -5,0" android:fillColor="#22d3ee"/>
+  <!-- Glowing enchanted sword (right hand, raised) -->
+  <path android:pathData="M68,58 L72,54 L76,10 L74,8 L70,10 L66,54 Z" android:fillColor="#a5f3fc"/>
+  <path android:pathData="M69,55 L73,51 L76,14 L74,10 L71,14 L67,51 Z" android:fillColor="#e0f9ff"/>
+  <!-- Sword glow aura -->
+  <path android:pathData="M67,55 L73,51 L78,12 L80,14 L74,52 L70,58 Z" android:fillColor="#00000000" android:strokeColor="#22d3ee" android:strokeWidth="1.5"/>
+  <!-- Crossguard -->
+  <path android:pathData="M62,52 L80,52 L80,58 L62,58 Z" android:fillColor="#0e7490"/>
+  <path android:pathData="M63,54 L79,54" android:strokeColor="#22d3ee" android:strokeWidth="1" android:fillColor="#00000000"/>
+  <!-- Hilt -->
+  <path android:pathData="M69,58 L71,58 L73,68 L67,68 Z" android:fillColor="#164e63"/>
+  <!-- Left hand — arcane orb -->
+  <path android:pathData="M28,85 m-8,0 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0" android:fillColor="#0e7490"/>
+  <path android:pathData="M28,85 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" android:fillColor="#22d3ee"/>
+  <path android:pathData="M28,85 m-2,0 a2,2 0 1,0 4,0 a2,2 0 1,0 -4,0" android:fillColor="#e0f9ff"/>
+  <!-- Arcane energy streams from orb -->
+  <path android:pathData="M22,80 Q15,72 18,64" android:strokeColor="#22d3ee" android:strokeWidth="1.5" android:fillColor="#00000000"/>
+  <path android:pathData="M20,88 Q12,88 14,96" android:strokeColor="#06b6d4" android:strokeWidth="1.2" android:fillColor="#00000000"/>
+  <!-- Legs -->
+  <path android:pathData="M38,100 L46,100 L44,148 L36,148 Z" android:fillColor="#0c4a6e"/>
+  <path android:pathData="M54,100 L62,100 L64,148 L56,148 Z" android:fillColor="#0c4a6e"/>
+  <!-- Boot energy lines -->
+  <path android:pathData="M36,135 L46,135" android:strokeColor="#22d3ee" android:strokeWidth="0.8" android:fillColor="#00000000"/>
+  <path android:pathData="M54,135 L64,135" android:strokeColor="#22d3ee" android:strokeWidth="0.8" android:fillColor="#00000000"/>
+</vector>

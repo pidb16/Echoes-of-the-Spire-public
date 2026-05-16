@@ -5,6 +5,7 @@ package com.echoes.spire.ui
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,11 +25,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.echoes.spire.R
 import com.echoes.spire.data.*
 import com.echoes.spire.game.GameUiState
 import com.echoes.spire.game.GameViewModel
@@ -131,6 +134,13 @@ fun RunScreen(state: GameUiState, vm: GameViewModel) {
             if (state.heroRelics.isNotEmpty() || state.heroBlessings.isNotEmpty()) {
                 RelicsBlessingsPanel(state)
             }
+
+            // Ornate divider
+            Image(
+                painter = painterResource(R.drawable.ic_divider_ornate),
+                contentDescription = null,
+                modifier = Modifier.fillMaxWidth().height(12.dp).padding(horizontal = 8.dp)
+            )
 
             // Combat log
             CombatLogPanel(state, vm)
@@ -251,10 +261,10 @@ fun HeroCard(state: GameUiState, heroHpPct: Float, biomeAccent: Color, modifier:
             .padding(11.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        IconCircle(
-            emoji = cls?.icon ?: "⚔️",
-            size = 48.dp,
-            glowColor = biomeAccent
+        Image(
+            painter = painterResource(heroDrawableRes(state.heroCls)),
+            contentDescription = state.heroCls,
+            modifier = Modifier.size(72.dp).clip(RoundedCornerShape(12.dp))
         )
         Text(cls?.name ?: "", color = Color(0xFFc4b5fd), fontWeight = FontWeight.Bold, fontSize = 11.sp,
             modifier = Modifier.padding(top = 4.dp))

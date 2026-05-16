@@ -1,0 +1,27 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="60dp" android:height="80dp"
+    android:viewportWidth="60" android:viewportHeight="80">
+  <!-- Spire base -->
+  <path android:pathData="M10,80 L50,80 L50,50 L10,50 Z" android:fillColor="#1e293b"/>
+  <!-- Spire middle -->
+  <path android:pathData="M18,50 L42,50 L42,25 L18,25 Z" android:fillColor="#334155"/>
+  <!-- Spire top -->
+  <path android:pathData="M24,25 L36,25 L36,12 L24,12 Z" android:fillColor="#475569"/>
+  <!-- Spire tip -->
+  <path android:pathData="M30,0 L38,12 L22,12 Z" android:fillColor="#6366f1"/>
+  <!-- Windows -->
+  <path android:pathData="M27,15 L33,15 L33,22 L27,22 Z" android:fillColor="#818cf8"/>
+  <path android:pathData="M21,28 L27,28 L27,35 L21,35 Z" android:fillColor="#4f46e5"/>
+  <path android:pathData="M33,28 L39,28 L39,35 L33,35 Z" android:fillColor="#4f46e5"/>
+  <path android:pathData="M15,53 L23,53 L23,62 L15,62 Z" android:fillColor="#334155"/>
+  <path android:pathData="M37,53 L45,53 L45,62 L37,62 Z" android:fillColor="#334155"/>
+  <path android:pathData="M15,66 L23,66 L23,75 L15,75 Z" android:fillColor="#334155"/>
+  <path android:pathData="M37,66 L45,66 L45,75 L37,75 Z" android:fillColor="#334155"/>
+  <path android:pathData="M26,55 L34,55 L34,75 L26,75 Z" android:fillColor="#1e293b"/>
+  <!-- Entry arch -->
+  <path android:pathData="M26,75 Q30,70 34,75" android:strokeColor="#6366f1" android:strokeWidth="1" android:fillColor="#00000000"/>
+  <!-- Glow on tip -->
+  <path android:pathData="M30,0 L34,8 L30,7 L26,8 Z" android:fillColor="#818cf8"/>
+  <!-- Base steps -->
+  <path android:pathData="M6,80 L54,80 L52,76 L8,76 Z" android:fillColor="#0f172a"/>
+</vector>

@@ -1,0 +1,52 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp" android:height="160dp"
+    android:viewportWidth="100" android:viewportHeight="160">
+  <!-- Background — darkest of all -->
+  <path android:pathData="M50,80 m-60,0 a60,80 0 1,0 120,0 a60,80 0 1,0 -120,0" android:fillColor="#0d0520"/>
+  <path android:pathData="M50,80 m-35,0 a35,50 0 1,0 70,0 a35,50 0 1,0 -70,0" android:fillColor="#070310"/>
+  <!-- Shadow tendrils from below -->
+  <path android:pathData="M50,148 Q30,130 15,100 Q25,110 50,120 Z" android:fillColor="#1a0533"/>
+  <path android:pathData="M50,148 Q70,130 85,100 Q75,110 50,120 Z" android:fillColor="#1a0533"/>
+  <path android:pathData="M50,148 Q20,140 10,120 Q25,128 50,135 Z" android:fillColor="#0d0220"/>
+  <path android:pathData="M50,148 Q80,140 90,120 Q75,128 50,135 Z" android:fillColor="#0d0220"/>
+  <!-- Cloak (wide, dramatic) -->
+  <path android:pathData="M28,65 Q5,85 8,148 L45,148 L50,135 L55,148 L92,148 Q95,85 72,65 Z" android:fillColor="#1e0a4a"/>
+  <path android:pathData="M34,68 Q15,85 18,148 L45,148 L50,137 L55,148 L82,148 Q85,85 66,68 Z" android:fillColor="#2d1265"/>
+  <!-- Body (lean, crouched slightly) -->
+  <path android:pathData="M40,65 L60,65 L62,100 L50,104 L38,100 Z" android:fillColor="#1a0533"/>
+  <!-- Leather straps/armor pieces -->
+  <path android:pathData="M40,65 L60,65 L60,72 L40,72 Z" android:fillColor="#3b0764"/>
+  <path android:pathData="M42,80 L58,80 L58,86 L42,86 Z" android:fillColor="#3b0764"/>
+  <!-- Head with hood/mask -->
+  <path android:pathData="M50,35 m-11,0 a11,13 0 1,0 22,0 a11,13 0 1,0 -22,0" android:fillColor="#1e0a4a"/>
+  <!-- Hood over head -->
+  <path android:pathData="M36,35 Q35,20 50,15 Q65,20 64,35 Q60,48 50,50 Q40,48 36,35 Z" android:fillColor="#0d0220"/>
+  <!-- Mask bottom half -->
+  <path android:pathData="M38,40 Q50,45 62,40 Q60,50 50,52 Q40,50 38,40 Z" android:fillColor="#1a0533"/>
+  <!-- Glowing eye slit -->
+  <path android:pathData="M38,36 L62,36 L62,40 L38,40 Z" android:fillColor="#0d0220"/>
+  <path android:pathData="M40,37 L60,37 L60,39 L40,39 Z" android:fillColor="#1a0533"/>
+  <!-- Purple eye glow -->
+  <path android:pathData="M44,37.5 L49,37.5 L49,38.5 L44,38.5 Z" android:fillColor="#7c3aed"/>
+  <path android:pathData="M51,37.5 L56,37.5 L56,38.5 L51,38.5 Z" android:fillColor="#7c3aed"/>
+  <!-- Right arm with blade -->
+  <path android:pathData="M60,65 L68,62 L70,95 L62,98 Z" android:fillColor="#1a0533"/>
+  <!-- Right dagger blade (reverse grip) -->
+  <path android:pathData="M66,62 L72,58 L84,20 L80,18 L74,22 L64,60 Z" android:fillColor="#94a3b8"/>
+  <path android:pathData="M68,60 L76,55 L82,22 L80,20 L74,24 L66,58 Z" android:fillColor="#cbd5e1"/>
+  <path android:pathData="M62,58 L78,54 L78,60 L62,64 Z" android:fillColor="#4c1d95"/>
+  <!-- Left arm with blade (other direction) -->
+  <path android:pathData="M40,65 L32,62 L30,95 L38,98 Z" android:fillColor="#1a0533"/>
+  <!-- Left dagger -->
+  <path android:pathData="M34,62 L28,58 L16,20 L20,18 L26,22 L36,60 Z" android:fillColor="#94a3b8"/>
+  <path android:pathData="M32,60 L24,55 L18,22 L20,20 L26,24 L34,58 Z" android:fillColor="#cbd5e1"/>
+  <path android:pathData="M38,58 L22,54 L22,60 L38,64 Z" android:fillColor="#4c1d95"/>
+  <!-- Legs -->
+  <path android:pathData="M38,100 L46,100 L44,148 L36,148 Z" android:fillColor="#1e0a4a"/>
+  <path android:pathData="M54,100 L62,100 L64,148 L56,148 Z" android:fillColor="#1e0a4a"/>
+  <!-- Shadow wisps around -->
+  <path android:pathData="M20,70 Q12,65 15,75" android:strokeColor="#4c1d95" android:strokeWidth="2" android:fillColor="#00000000"/>
+  <path android:pathData="M80,70 Q88,65 85,75" android:strokeColor="#4c1d95" android:strokeWidth="2" android:fillColor="#00000000"/>
+  <path android:pathData="M22,90 Q10,88 14,98" android:strokeColor="#3b0764" android:strokeWidth="1.5" android:fillColor="#00000000"/>
+  <path android:pathData="M78,90 Q90,88 86,98" android:strokeColor="#3b0764" android:strokeWidth="1.5" android:fillColor="#00000000"/>
+</vector>
