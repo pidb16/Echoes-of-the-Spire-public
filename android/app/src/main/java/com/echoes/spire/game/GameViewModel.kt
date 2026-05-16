@@ -62,6 +62,9 @@ data class GameUiState(
     val heroStealthReady: Boolean = false,
     val heroStealthHits: Int = 0,
     val heroSnapFreezeStacks: Int = 0,
+    val heroStamina: Int = 100,
+    val heroStaminaMax: Int = 100,
+    val heroStaminaDrained: Boolean = false,
     val enemyHp: Int = 0,
     val enemyMaxHp: Int = 1,
     val enemyName: String = "",
@@ -77,6 +80,7 @@ data class GameUiState(
     val enemyStunned: Boolean = false,
     val enemyPoisonBuildup: Double = 0.0,
     val enemyFrostBuildup: Double = 0.0,
+    val enemyShattered: Boolean = false,
     val burstCharge: Int = 0,
     val burstMax: Int = 6500,
     val autoBurst: Boolean = false,
@@ -111,6 +115,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     private var runState: RunState? = null
     private var lastHeroAttack: Long = 0L
     private var lastEnemyAttack: Long = 0L
+    private var lastStaminaRegen: Long = 0L
 
     private var combatJob: Job? = null
     private var burstJob: Job? = null
@@ -273,8 +278,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         rs.combatLog.addFirst(LogEntry("📅 Daily Run — ${enemy.name} ${enemy.icon} awaits.", "info", 1))
         runState = rs
 
-        lastHeroAttack = System.currentTimeMillis() - hero.spd + 100L
-        lastEnemyAttack = System.currentTimeMillis() - 1600L + 300L
+        val now = System.currentTimeMillis()
+        lastHeroAttack = now - hero.spd + 100L
+        lastEnemyAttack = now - 1600L + 300L
+        lastStaminaRegen = now
 
         _state.value = _state.value.copy(
             screen = AppScreen.RUN,
@@ -303,8 +310,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         rs.combatLog.addFirst(LogEntry("✨ Entered the Spire — ${enemy.name} ${enemy.icon} awaits.", "info", 1))
         runState = rs
 
-        lastHeroAttack = System.currentTimeMillis() - hero.spd + 100L
-        lastEnemyAttack = System.currentTimeMillis() - 1600L + 300L
+        val now = System.currentTimeMillis()
+        lastHeroAttack = now - hero.spd + 100L
+        lastEnemyAttack = now - 1600L + 300L
+        lastStaminaRegen = now
 
         _state.value = _state.value.copy(
             screen = AppScreen.RUN,
@@ -342,6 +351,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 if (rs.phase != RunPhase.FIGHTING) continue
                 if (rs.hero.hasRelic("cursedCoin")) rs.hero.hp = max(1, rs.hero.hp - 5)
                 if (rs.hero.hasRelic("soulhunger"))  rs.hero.hp = max(1, rs.hero.hp - 2)
+                // Stamina recovery: +8 per second
+                rs.hero.stamina = min(rs.hero.staminaMax, rs.hero.stamina + 8)
                 publishRunState()
             }
         }
@@ -351,7 +362,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 val rs = runState ?: continue
                 if (rs.phase != RunPhase.FIGHTING) continue
                 val now = System.currentTimeMillis()
-                val hp = if (rs.hero.spd > 0) ((now - lastHeroAttack).toFloat() / rs.hero.spd).coerceIn(0f, 1f) else 0f
+                // If stamina drained, attack bar fills at half speed
+                val effectiveSpd = if (rs.hero.staminaDrained) rs.hero.spd * 2 else rs.hero.spd
+                val hp = if (effectiveSpd > 0) ((now - lastHeroAttack).toFloat() / effectiveSpd).coerceIn(0f, 1f) else 0f
                 val enemy = rs.enemy
                 val ep = if (enemy != null && !enemy.stunned) ((now - lastEnemyAttack).toFloat() / 1600f).coerceIn(0f, 1f) else 0f
                 _state.value = _state.value.copy(heroAttackProgress = hp, enemyAttackProgress = ep)
@@ -378,97 +391,123 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val now = System.currentTimeMillis()
         var dirty = false
 
+        // Determine effective hero attack interval (stamina drained = double interval)
+        val effectiveHeroSpd = if (hero.staminaDrained) hero.spd * 2 else hero.spd
+
         // Hero attacks
-        if (now - lastHeroAttack >= hero.spd) {
-            lastHeroAttack = now
-            val wep = WEAPONS[hero.weapon] ?: WEAPONS["fists"]!!
+        if (now - lastHeroAttack >= effectiveHeroSpd) {
+            val cost = staminaCost(hero.weapon)
 
-            // Shadowblade stealth counter
-            if (hero.cls == "shadowblade" && !hero.stealthReady) {
-                hero.stealthHits++
-                if (hero.stealthHits >= 3) {
-                    hero.stealthReady = true
-                    hero.stealthHits = 0
-                }
-            }
+            // Check stamina before swinging
+            if (hero.stamina < cost) {
+                // Not enough stamina — mark drained, skip attack but reset timer so bar refills
+                hero.staminaDrained = true
+                lastHeroAttack = now
+                dirty = true
+            } else {
+                // Deduct stamina and proceed
+                hero.stamina = max(0, hero.stamina - cost)
+                hero.staminaDrained = false
+                lastHeroAttack = now
 
-            // Bow focus tracking
-            if (wep.focus) {
-                if (hero.focusShots >= 2) hero.focusShots = 0 else hero.focusShots++
-            }
+                val wep = WEAPONS[hero.weapon] ?: WEAPONS["fists"]!!
 
-            val hits = if (wep.twin) 2 else 1
-            var totalDmg = 0
-            var anyCrit = false
-
-            for (h in 0 until hits) {
-                val res = calcHeroDmg(hero, enemy, h > 0)
-                enemy.hp = max(0, enemy.hp - res.dmg)
-                totalDmg += res.dmg
-                if (res.crit) anyCrit = true
-                if (res.snapConsumed) { enemy.snapFreezeReady = false; enemy.frozen = false }
-                if (res.stealth) hero.stealthReady = false
-                if (hero.snapFreezeStacks > 0) hero.snapFreezeStacks = max(0, hero.snapFreezeStacks - 1)
-
-                // Life leech
-                val vf    = hero.hasRelic("voidHeart")
-                val ll    = hero.hasRelic("lifeLeech")
-                val vfang = hero.hasRelic("vampireFang")
-                val lp = when {
-                    vf     -> 0.50
-                    vfang  -> 0.50   // vampireFang: +50% leech (milestone relic bonus included)
-                    ll     -> 0.08
-                    else   -> 0.0
-                }
-                if (lp > 0) hero.hp = min(hero.maxHp, hero.hp + (res.dmg * lp).toInt())
-
-                // Warhammer stun
-                if (wep.stun > 0 && Math.random() < wep.stun && !enemy.stunned) {
-                    enemy.stunned = true
-                    enemy.stunTimer = 2200L
-                    addLog(rs, "⚡ Warhammer stun!", "relic")
+                // Shadowblade stealth counter
+                if (hero.cls == "shadowblade" && !hero.stealthReady) {
+                    hero.stealthHits++
+                    if (hero.stealthHits >= 3) {
+                        hero.stealthReady = true
+                        hero.stealthHits = 0
+                    }
                 }
 
-                if (res.isFocusShot) addLog(rs, "🏹 Bow: Focus Shot!", "big")
-            }
-
-            if (anyCrit) addLog(rs, "💥 CRIT! ${fmtN(totalDmg)} damage!", "big")
-            if (hero.cls == "shadowblade" && hero.stealthReady) addLog(rs, "🌑 Stealth ready!", "relic")
-
-            // Poison buildup
-            if (!enemy.poisoned) {
-                val ab = hero.arcane * 0.9 + (if (hero.hasRelic("arcaneCoil")) 13.0 else 0.0)
-                enemy.poisonBuildup = min(100.0, enemy.poisonBuildup + ab * 0.18)
-                if (enemy.poisonBuildup >= 100.0) {
-                    enemy.poisoned = true
-                    enemy.poisonBuildup = 0.0
-                    addLog(rs, "☠️ Poisoned!", "relic")
+                // Bow focus tracking
+                if (wep.focus) {
+                    if (hero.focusShots >= 2) hero.focusShots = 0 else hero.focusShots++
                 }
-            }
 
-            // Frost buildup
-            if (!enemy.frozen && !enemy.snapFreezeReady) {
-                val fb = hero.arcane * 0.5 + hero.intel * 0.4 + (if (hero.hasRelic("frostCore")) 15.0 else 0.0)
-                val thresh = if (hero.hasBlessing("snapPower")) 70.0 else 100.0
-                enemy.frostBuildup = min(100.0, enemy.frostBuildup + fb * 0.13)
-                if (enemy.frostBuildup >= thresh) {
-                    enemy.frozen = true
-                    enemy.frozenLeft = 3
-                    enemy.frostBuildup = 0.0
-                    enemy.snapFreezeReady = true
-                    if (hero.hasRelic("glacialHeart")) hero.snapFreezeStacks += 5
-                    addLog(rs, "❄️ Snap Freeze!", "relic")
+                val hits = if (wep.twin) 2 else 1
+                var totalDmg = 0
+                var anyCrit = false
+
+                for (h in 0 until hits) {
+                    val res = calcHeroDmg(hero, enemy, h > 0)
+                    enemy.hp = max(0, enemy.hp - res.dmg)
+                    totalDmg += res.dmg
+                    if (res.crit) anyCrit = true
+                    if (res.snapConsumed) { enemy.snapFreezeReady = false; enemy.frozen = false }
+                    if (res.stealth) hero.stealthReady = false
+                    if (hero.snapFreezeStacks > 0) hero.snapFreezeStacks = max(0, hero.snapFreezeStacks - 1)
+
+                    // Shatter reaction
+                    if (res.shatter) {
+                        enemy.hp = max(0, enemy.hp - res.shatterDmg)
+                        enemy.frozen = false
+                        enemy.snapFreezeReady = false
+                        addLog(rs, "💥 SHATTER! +${fmtN(res.shatterDmg)} pierce!", "big")
+                    }
+
+                    // Life leech
+                    val vf    = hero.hasRelic("voidHeart")
+                    val ll    = hero.hasRelic("lifeLeech")
+                    val vfang = hero.hasRelic("vampireFang")
+                    val lp = when {
+                        vf     -> 0.50
+                        vfang  -> 0.50 + hero.bonusLeech
+                        ll     -> 0.08 + hero.bonusLeech
+                        hero.bonusLeech > 0 -> hero.bonusLeech.toDouble()
+                        else   -> 0.0
+                    }
+                    if (lp > 0) hero.hp = min(hero.maxHp, hero.hp + (res.dmg * lp).toInt())
+
+                    // Warhammer stun
+                    if (wep.stun > 0 && Math.random() < wep.stun && !enemy.stunned) {
+                        enemy.stunned = true
+                        enemy.stunTimer = 2200L
+                        addLog(rs, "⚡ Warhammer stun!", "relic")
+                    }
+
+                    if (res.isFocusShot) addLog(rs, "🏹 Bow: Focus Shot!", "big")
                 }
-            }
 
-            // Poison damage
-            if (enemy.poisoned) {
-                val pd = (hero.atk * 0.28).toInt()
-                enemy.hp = max(0, enemy.hp - pd)
-                if (hero.hasRelic("arcaneCoil")) rs.runGold++
-            }
+                if (anyCrit) addLog(rs, "💥 CRIT! ${fmtN(totalDmg)} damage!", "big")
+                if (hero.cls == "shadowblade" && hero.stealthReady) addLog(rs, "🌑 Stealth ready!", "relic")
 
-            dirty = true
+                // Poison buildup
+                if (!enemy.poisoned) {
+                    val ab = hero.arcane * 0.9 + (if (hero.hasRelic("arcaneCoil")) 13.0 else 0.0)
+                    enemy.poisonBuildup = min(100.0, enemy.poisonBuildup + ab * 0.18)
+                    if (enemy.poisonBuildup >= 100.0) {
+                        enemy.poisoned = true
+                        enemy.poisonBuildup = 0.0
+                        addLog(rs, "☠️ Poisoned!", "relic")
+                    }
+                }
+
+                // Frost buildup
+                if (!enemy.frozen && !enemy.snapFreezeReady) {
+                    val fb = hero.arcane * 0.5 + hero.intel * 0.4 + (if (hero.hasRelic("frostCore")) 15.0 else 0.0)
+                    val thresh = if (hero.hasBlessing("snapPower")) 70.0 else 100.0
+                    enemy.frostBuildup = min(100.0, enemy.frostBuildup + fb * 0.13)
+                    if (enemy.frostBuildup >= thresh) {
+                        enemy.frozen = true
+                        enemy.frozenLeft = 3
+                        enemy.frostBuildup = 0.0
+                        enemy.snapFreezeReady = true
+                        if (hero.hasRelic("glacialHeart")) hero.snapFreezeStacks += 5
+                        addLog(rs, "❄️ Snap Freeze!", "relic")
+                    }
+                }
+
+                // Poison damage
+                if (enemy.poisoned) {
+                    val pd = (hero.atk * 0.28).toInt()
+                    enemy.hp = max(0, enemy.hp - pd)
+                    if (hero.hasRelic("arcaneCoil")) rs.runGold++
+                }
+
+                dirty = true
+            }
         }
 
         // Stun timer
@@ -559,12 +598,19 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val enemy = rs.enemy ?: return
         val s = _state.value
 
+        // Epidemic: spread poison buildup to next enemy
+        if (enemy.poisoned || enemy.poisonBuildup > 0) {
+            rs.epidemicCarry = (hero.arcane * 0.4f).coerceAtMost(60f)
+        } else {
+            rs.epidemicCarry = 0f
+        }
+
         val sM = (1 + (rs.research["soulMult"] ?: 0) * 0.20) *
                 (if (s.prestige.contains("doubleSouls")) 2 else 1) *
                 (if (hero.hasRelic("soulhunger")) 4 else 1)
         val spRelic = hero.relics.find { it.id == "soulPact" }
         val spData  = MILESTONE_RELICS.find { it.id == "soulPact" }
-        val goldPen = spData?.goldPenalty?.takeIf { spRelic != null } ?: 0.0
+        val goldPen = spData?.goldPenalty?.takeIf { spRelic != null }?.toDouble() ?: 0.0
         val soulMulBonus = spData?.soulMul?.takeIf { spRelic != null } ?: 1
 
         val gM = (if (hero.hasBlessing("goldRush")) 1.6 else 1.0) *
@@ -673,10 +719,25 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun spawnFloor(fl: Int) {
         val rs = runState ?: return
+        val hero = rs.hero
+
+        // Blood Forged Anvil — lose 2 max HP per floor
+        if (hero.relics.any { it.id == "bloodForgedAnvil" }) {
+            hero.maxHp = max(10, hero.maxHp - 2)
+            hero.hp = min(hero.hp, hero.maxHp)
+        }
+
         val ne = buildEnemy(fl, rs.corruption)
+
+        // Epidemic carry — spread poison buildup to new enemy
+        if (rs.epidemicCarry > 0f) {
+            ne.poisonBuildup = rs.epidemicCarry.toDouble()
+            rs.epidemicCarry = 0f
+        }
+
         rs.enemy = ne
         rs.phase = RunPhase.FIGHTING
-        lastHeroAttack = System.currentTimeMillis() - rs.hero.spd + 150L
+        lastHeroAttack = System.currentTimeMillis() - hero.spd + 150L
         lastEnemyAttack = System.currentTimeMillis() - 1600L + 320L
         addLog(rs, "🏔️ Floor $fl: ${ne.name} ${ne.icon} (${ne.maxHp} HP)", "info")
         publishRunState()
@@ -687,6 +748,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     fun fireBurst() {
         val rs = runState ?: return
         if (rs.phase != RunPhase.FIGHTING || rs.burstCharge < rs.burstMax) return
+        // Broken Hourglass blocks burst
+        if (rs.hero.noBurst) return
         val hero = rs.hero
         val enemy = rs.enemy ?: return
         val dmg = (hero.atk * 4.5 *
@@ -725,13 +788,18 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     fun chooseMilestone(r: MilestoneRelic) {
         val rs = runState ?: return
-        if (r.atkBonus > 0) rs.hero.atk = (rs.hero.atk * (1 + r.atkBonus)).toInt()
+        val hero = rs.hero
+
+        if (r.atkBonus > 0) hero.atk = (hero.atk * (1 + r.atkBonus)).toInt()
         if (r.hpPenalty > 0) {
-            rs.hero.maxHp = max(10, (rs.hero.maxHp * (1 - r.hpPenalty)).toInt())
-            rs.hero.hp = min(rs.hero.hp, rs.hero.maxHp)
+            hero.maxHp = max(10, (hero.maxHp * (1 - r.hpPenalty)).toInt())
+            hero.hp = min(hero.hp, hero.maxHp)
         }
-        if (r.zeroDef) rs.hero.def = 0
-        if (r.defPenalty > 0) rs.hero.def = max(0, (rs.hero.def * (1 - r.defPenalty)).toInt())
+        if (r.zeroDef) hero.def = 0
+        if (r.defPenalty > 0) hero.def = max(0, (hero.def * (1 - r.defPenalty)).toInt())
+        if (r.leechBonus > 0) hero.bonusLeech = r.leechBonus
+        if (r.doubleSpeed) hero.spd = max(150L, hero.spd / 2)
+        if (r.noBurst) hero.noBurst = true
 
         // Convert MilestoneRelic to RelicDef for hero.relics list
         val asDef = RelicDef(r.id, r.name, r.icon, r.rarity, r.desc)
@@ -838,7 +906,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val hero = rs.hero
         val enemy = rs.enemy
         val now = System.currentTimeMillis()
-        val hp = if (hero.spd > 0) ((now - lastHeroAttack).toFloat() / hero.spd).coerceIn(0f, 1f) else 0f
+        val effectiveSpd = if (hero.staminaDrained) hero.spd * 2 else hero.spd
+        val hp = if (effectiveSpd > 0) ((now - lastHeroAttack).toFloat() / effectiveSpd).coerceIn(0f, 1f) else 0f
         val ep = if (enemy != null && !enemy.stunned) ((now - lastEnemyAttack).toFloat() / 1600f).coerceIn(0f, 1f) else 0f
 
         _state.value = _state.value.copy(
@@ -858,6 +927,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             heroStealthReady = hero.stealthReady,
             heroStealthHits = hero.stealthHits,
             heroSnapFreezeStacks = hero.snapFreezeStacks,
+            heroStamina = hero.stamina,
+            heroStaminaMax = hero.staminaMax,
+            heroStaminaDrained = hero.staminaDrained,
             enemyHp = enemy?.hp ?: 0,
             enemyMaxHp = enemy?.maxHp ?: 1,
             enemyName = enemy?.name ?: "",
@@ -873,6 +945,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             enemyStunned = enemy?.stunned ?: false,
             enemyPoisonBuildup = enemy?.poisonBuildup ?: 0.0,
             enemyFrostBuildup = enemy?.frostBuildup ?: 0.0,
+            enemyShattered = enemy?.shattered ?: false,
             burstCharge = rs.burstCharge,
             burstMax = rs.burstMax,
             combatLog = rs.combatLog.toList(),

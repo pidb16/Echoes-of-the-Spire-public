@@ -3,6 +3,7 @@ package com.echoes.spire.ui.theme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
 // ─── Brand Colors ─────────────────────────────────────────────────────────────
@@ -37,6 +38,15 @@ fun rarityColor(rarity: String): Color = when (rarity) {
     "cursed"   -> RarityCursed
     else       -> Color.White
 }
+
+// ─── Gradient Brushes ─────────────────────────────────────────────────────────
+
+val SpireGradient   = Brush.verticalGradient(listOf(Color(0xFF1a0533), Color(0xFF07080f)))
+val GoldGradient    = Brush.horizontalGradient(listOf(Color(0xFFf59e0b), Color(0xFFfcd34d)))
+val DangerGradient  = Brush.horizontalGradient(listOf(Color(0xFFb91c1c), Color(0xFFef4444)))
+val HealthGradient  = Brush.horizontalGradient(listOf(Color(0xFF15803d), Color(0xFF22c55e)))
+val FrostGradient   = Brush.horizontalGradient(listOf(Color(0xFF1d4ed8), Color(0xFF93c5fd)))
+val PoisonGradient  = Brush.horizontalGradient(listOf(Color(0xFF365314), Color(0xFFa3e635)))
 
 // ─── Dark Color Scheme ────────────────────────────────────────────────────────
 

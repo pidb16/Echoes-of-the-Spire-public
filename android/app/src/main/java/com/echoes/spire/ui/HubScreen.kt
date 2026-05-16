@@ -1,5 +1,7 @@
 package com.echoes.spire.ui
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -10,10 +12,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -63,41 +67,68 @@ fun BottomNav(state: GameUiState, vm: GameViewModel) {
         Triple(HubTab.PRESTIGE,   "🎀", "Astral"),
         Triple(HubTab.RIFT,       "🌌", "Rift")
     )
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xF207080f))
-            .border(
-                width = 1.dp,
-                color = Color(0x336366f1),
-                shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp)
-            )
-            .padding(vertical = 6.dp),
-        horizontalArrangement = Arrangement.SpaceAround,
-        verticalAlignment = Alignment.CenterVertically
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color(0xF207080f),
+        tonalElevation = 0.dp
     ) {
-        tabs.forEach { (tab, icon, label) ->
-            val active = state.hubTab == tab
-            Column(
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // Top border line
+            Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(if (active) Color(0x2E6366f1) else Color.Transparent)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) { vm.setHubTab(tab) }
-                    .padding(horizontal = 10.dp, vertical = 6.dp)
-                    .defaultMinSize(minWidth = 52.dp, minHeight = 44.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(Color(0x336366f1))
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(icon, fontSize = 20.sp)
-                Text(
-                    text = label,
-                    color = if (active) Color(0xFFc4b5fd) else TextMuted,
-                    fontSize = 9.sp,
-                    fontWeight = if (active) FontWeight.Bold else FontWeight.Normal
-                )
+                tabs.forEach { (tab, icon, label) ->
+                    val active = state.hubTab == tab
+                    val scale by animateFloatAsState(
+                        targetValue = if (active) 1.10f else 1.0f,
+                        animationSpec = tween(180),
+                        label = "navScale"
+                    )
+
+                    Column(
+                        modifier = Modifier
+                            .scale(scale)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (active) Color(0x2E6366f1) else Color.Transparent)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) { vm.setHubTab(tab) }
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                            .defaultMinSize(minWidth = 52.dp, minHeight = 44.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(icon, fontSize = 20.sp)
+                        Text(
+                            text = label,
+                            color = if (active) Color(0xFFc4b5fd) else TextMuted,
+                            fontSize = 9.sp,
+                            fontWeight = if (active) FontWeight.Bold else FontWeight.Normal
+                        )
+                        // Active indicator dot
+                        if (active) {
+                            Box(
+                                modifier = Modifier
+                                    .padding(top = 2.dp)
+                                    .size(width = 16.dp, height = 2.dp)
+                                    .clip(RoundedCornerShape(1.dp))
+                                    .background(AccentIndigo)
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -215,7 +246,8 @@ fun ExpeditionTab(state: GameUiState, vm: GameViewModel) {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(icon, fontSize = 14.sp)
-                    Text(label, color = Color(0xFF94a3b8), fontSize = 8.sp, modifier = Modifier.padding(top = 2.dp))
+                    Text(label, color = Color(0xFF94a3b8), fontSize = 8.sp,
+                        modifier = Modifier.padding(top = 2.dp))
                 }
             }
         }
@@ -273,7 +305,8 @@ fun ExpeditionTab(state: GameUiState, vm: GameViewModel) {
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF78350f))
         ) {
-            Text("🌅 Ascend — ×2.5 Ancient Power", color = Color(0xFFfef3c7), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+            Text("🌅 Ascend — ×2.5 Ancient Power", color = Color(0xFFfef3c7),
+                fontWeight = FontWeight.Bold, fontSize = 11.sp)
         }
     }
 
@@ -319,8 +352,10 @@ fun ExpeditionTab(state: GameUiState, vm: GameViewModel) {
                         )
                     }
                     Column(horizontalAlignment = Alignment.End) {
-                        Text("F${rec.floor}", color = Color(0xFF818cf8), fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("💰${fmtN(rec.gold)} 💜${fmtN(rec.souls)}", color = TextSecondary, fontSize = 9.sp)
+                        Text("F${rec.floor}", color = Color(0xFF818cf8), fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp)
+                        Text("💰${fmtN(rec.gold)} 💜${fmtN(rec.souls)}", color = TextSecondary,
+                            fontSize = 9.sp)
                     }
                 }
             }
@@ -395,7 +430,8 @@ fun PrestigeTab(state: GameUiState, vm: GameViewModel) {
             .padding(10.dp)
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-            Text("🎀 Astral Ribbons: ${state.ribbons}", color = RibbonGreen, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+            Text("🎀 Astral Ribbons: ${state.ribbons}", color = RibbonGreen,
+                fontWeight = FontWeight.Bold, fontSize = 13.sp)
             Text(
                 text = "Earned by reaching Floor 100. Costs scale with owned skills.",
                 color = TextSecondary, fontSize = 10.sp,
@@ -482,7 +518,8 @@ fun RiftTab(state: GameUiState, vm: GameViewModel) {
             modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
             borderColor = Color(0x667c3aed)
         ) {
-            Text("☠️ Corruption: ${state.corruption}", color = Color(0xFFc4b5fd), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            Text("☠️ Corruption: ${state.corruption}", color = Color(0xFFc4b5fd),
+                fontWeight = FontWeight.Bold, fontSize = 12.sp)
             Text(
                 text = "+30%/tier enemy power · +25%/tier loot",
                 color = TextSecondary, fontSize = 10.sp,
@@ -504,9 +541,7 @@ fun RiftTab(state: GameUiState, vm: GameViewModel) {
                     onClick = { vm.setCorruption(state.corruption + 1) },
                     modifier = Modifier.weight(1f).defaultMinSize(minHeight = 44.dp),
                     shape = RoundedCornerShape(9.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4c1d95)
-                    )
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4c1d95))
                 ) {
                     Text("+ Raise", color = Color.White, fontSize = 12.sp)
                 }
@@ -514,7 +549,8 @@ fun RiftTab(state: GameUiState, vm: GameViewModel) {
         }
 
         GlassCard(modifier = Modifier.fillMaxWidth()) {
-            Text("🏆 LEADERBOARD", color = AccentIndigo, fontSize = 9.sp, letterSpacing = 1.sp, modifier = Modifier.padding(bottom = 4.dp))
+            Text("🏆 LEADERBOARD", color = AccentIndigo, fontSize = 9.sp, letterSpacing = 1.sp,
+                modifier = Modifier.padding(bottom = 4.dp))
             Text("Best: F${state.bestFloor}", color = TextSecondary, fontSize = 10.sp)
             Text("Daily: F${state.dailyBest}", color = TextSecondary, fontSize = 10.sp)
             Text("AP: ×${String.format("%.2f", state.ancPow)}", color = TextSecondary, fontSize = 10.sp)
@@ -550,8 +586,10 @@ fun ClassCard(
     ) {
         Column {
             Text(cls.icon, fontSize = 20.sp)
-            Text(cls.name, color = Color(0xFFc4b5fd), fontWeight = FontWeight.Bold, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
-            Text(cls.desc, color = TextSecondary, fontSize = 9.sp, modifier = Modifier.padding(top = 2.dp), lineHeight = 12.sp)
+            Text(cls.name, color = Color(0xFFc4b5fd), fontWeight = FontWeight.Bold, fontSize = 11.sp,
+                modifier = Modifier.padding(top = 2.dp))
+            Text(cls.desc, color = TextSecondary, fontSize = 9.sp,
+                modifier = Modifier.padding(top = 2.dp), lineHeight = 12.sp)
             Row(modifier = Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text("❤️${cls.hp}", color = HpLow, fontSize = 9.sp)
                 Text("⚔️${cls.atk}", color = GoldColor, fontSize = 9.sp)
@@ -586,7 +624,8 @@ fun WeaponTile(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(w.icon, fontSize = 18.sp)
-        Text(w.name, color = Color(0xFF94a3b8), fontSize = 8.sp, modifier = Modifier.padding(top = 2.dp), textAlign = TextAlign.Center)
+        Text(w.name, color = Color(0xFF94a3b8), fontSize = 8.sp,
+            modifier = Modifier.padding(top = 2.dp), textAlign = TextAlign.Center)
     }
 }
 

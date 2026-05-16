@@ -100,13 +100,17 @@ data class MilestoneRelic(
     val icon: String,
     val desc: String,
     val rarity: String = "mythic",
-    val atkBonus: Double = 0.0,
-    val hpPenalty: Double = 0.0,
-    val leechBonus: Double = 0.0,
-    val defPenalty: Double = 0.0,
+    val atkBonus: Float = 0f,
+    val hpPenalty: Float = 0f,
+    val leechBonus: Float = 0f,
+    val defPenalty: Float = 0f,
     val soulMul: Int = 1,
-    val goldPenalty: Double = 0.0,
-    val zeroDef: Boolean = false
+    val goldPenalty: Float = 0f,
+    val zeroDef: Boolean = false,
+    val doubleSpeed: Boolean = false,
+    val noBurst: Boolean = false,
+    val forgeDiscount: Boolean = false,
+    val hpPerFloor: Int = 0
 )
 
 data class BiomeDef(
@@ -162,10 +166,12 @@ val RELICS: List<RelicDef> = listOf(
 )
 
 val MILESTONE_RELICS: List<MilestoneRelic> = listOf(
-    MilestoneRelic("warlordCrown", "Warlord's Crown", "👑", "+80% ATK, −25% max HP.",  atkBonus = 0.80, hpPenalty = 0.25),
-    MilestoneRelic("vampireFang",  "Vampire Fang",    "🦷", "+50% leech, −20% DEF.",   leechBonus = 0.50, defPenalty = 0.20),
-    MilestoneRelic("soulPact",     "Soul Pact",       "📜", "×3 Souls, −30% gold.",    soulMul = 3, goldPenalty = 0.30),
-    MilestoneRelic("glasscannon",  "Glass Cannon",    "💣", "+120% ATK, DEF → 0.",     atkBonus = 1.20, zeroDef = true)
+    MilestoneRelic("warlordCrown",    "Warlord's Crown",    "👑", "+80% ATK, −25% max HP",             atkBonus = 0.80f, hpPenalty = 0.25f),
+    MilestoneRelic("vampireFang",     "Vampire Fang",       "🦷", "+50% leech, −20% DEF",              leechBonus = 0.50f, defPenalty = 0.20f),
+    MilestoneRelic("soulPact",        "Soul Pact",          "📜", "×3 Souls, −30% gold",               soulMul = 3, goldPenalty = 0.30f),
+    MilestoneRelic("glasscannon",     "Glass Cannon",       "💣", "+120% ATK, DEF → 0",                atkBonus = 1.20f, zeroDef = true),
+    MilestoneRelic("brokenHourglass","Broken Hourglass",   "⏳", "Attack speed ×2, no Burst Strike",   doubleSpeed = true, noBurst = true),
+    MilestoneRelic("bloodForgedAnvil","Blood Forged Anvil", "🔥", "Forge 50% cheaper, −2 max HP per floor", forgeDiscount = true, hpPerFloor = 2),
 )
 
 val ENEMY_POOL: List<EnemyTemplate> = listOf(
@@ -232,7 +238,7 @@ data class HeroState(
     var hp: Int,
     var atk: Int,
     var def: Int,
-    val spd: Long,
+    var spd: Long,
     val crit: Double,
     val critMul: Double,
     val arcane: Int,
@@ -249,7 +255,12 @@ data class HeroState(
     var holyShieldTimer: Long = 0L,
     var stealthHits: Int = 0,
     var stealthReady: Boolean = false,
-    var focusShots: Int = 0
+    var focusShots: Int = 0,
+    val staminaMax: Int = 100,
+    var stamina: Int = 100,
+    var staminaDrained: Boolean = false,
+    var bonusLeech: Float = 0f,
+    var noBurst: Boolean = false
 ) {
     fun hasRelic(id: String) = relics.any { it.id == id }
     fun hasBlessing(id: String) = blessings.contains(id)
@@ -276,7 +287,9 @@ data class EnemyState(
     var frozenLeft: Int = 0,
     var snapFreezeReady: Boolean = false,
     var stunned: Boolean = false,
-    var stunTimer: Long = 0L
+    var stunTimer: Long = 0L,
+    var shattered: Boolean = false,
+    var epidemicBuildup: Float = 0f
 )
 
 data class LogEntry(val text: String, val type: String, val floor: Int)
@@ -305,7 +318,8 @@ data class RunState(
     val adGoldMul: Double = 1.0,
     var goldPerMin: Int = 0,
     var soulsPerMin: Double = 0.0,
-    val runStart: Long = System.currentTimeMillis()
+    val runStart: Long = System.currentTimeMillis(),
+    var epidemicCarry: Float = 0f
 )
 
 // ─── Serializable save data ───────────────────────────────────────────────────
@@ -347,8 +361,7 @@ data class SaveData(
 
 // ─── Builder helpers ──────────────────────────────────────────────────────────
 
-fun getBiome(floor: Int): BiomeDef = BIOMES[min(BIOMES.size - 1, floor / 20)]
-
+fun getBiome(floor: Int) = BIOMES[(floor / 20) % BIOMES.size]
 
 fun fmtN(n: Number): String {
     val v = n.toLong()
@@ -385,6 +398,12 @@ fun weightedRelicPick(pool: List<RelicDef>, count: Int = 3): List<RelicDef> {
     return picks
 }
 
+// Stamina cost per swing by weapon type
+fun staminaCost(weaponId: String): Int = when (weaponId) {
+    "greatsword", "warhammer", "spellstaff" -> 22
+    else -> 8  // dagger, twinblades, bow, fists, sword
+}
+
 fun buildHero(
     cls: String,
     forge: Map<String, Int>,
@@ -401,7 +420,8 @@ fun buildHero(
         (base.atk + (research["baseAtk"] ?: 0) * 4 + (forge["wepDmg"] ?: 0) * 9).toDouble() * wepMul
     ).toInt()
     val def = base.def + (research["baseDef"] ?: 0) * 3
-    val spd = max(280L, (wep.spdMs * (1 - (forge["atkSpd"] ?: 0) * 0.06)).toLong())
+    // Diminishing returns attack speed formula
+    val spd = max(150L, (wep.spdMs / (1.0 + (forge["atkSpd"] ?: 0) * 0.08)).toLong())
     val crit = capCrit(base.crit + wep.critAdd + (forge["critChance"] ?: 0) * 0.04)
     val critMul = 1.9 + (forge["critDmg"] ?: 0) * 0.15
 
@@ -477,7 +497,9 @@ data class DmgResult(
     val crit: Boolean,
     val snapConsumed: Boolean,
     val isFocusShot: Boolean,
-    val stealth: Boolean
+    val stealth: Boolean,
+    val shatter: Boolean = false,
+    val shatterDmg: Int = 0
 )
 
 fun calcHeroDmg(hero: HeroState, enemy: EnemyState, isSecondHit: Boolean = false): DmgResult {
@@ -517,11 +539,17 @@ fun calcHeroDmg(hero: HeroState, enemy: EnemyState, isSecondHit: Boolean = false
     val effDef = if (hasBP) enemy.def * 2 else enemy.def
     val finalDmg = applyDef(dmg, effDef, wep.defPen, enemy.defBypass)
 
+    // Shatter: frozen enemy hit by greatsword or warhammer
+    val canShatter = enemy.frozen && (hero.weapon == "greatsword" || hero.weapon == "warhammer")
+    val shatterDmg = if (canShatter) hero.atk * 3 else 0
+
     return DmgResult(
         dmg = max(1, finalDmg),
         crit = isCrit,
         snapConsumed = enemy.snapFreezeReady,
         isFocusShot = isFocusShot,
-        stealth = hero.stealthReady
+        stealth = hero.stealthReady,
+        shatter = canShatter,
+        shatterDmg = shatterDmg
     )
 }

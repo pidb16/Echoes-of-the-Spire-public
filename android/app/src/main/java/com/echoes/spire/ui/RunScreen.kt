@@ -2,12 +2,16 @@
 
 package com.echoes.spire.ui
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -15,16 +19,91 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.echoes.spire.data.*
 import com.echoes.spire.game.GameUiState
 import com.echoes.spire.game.GameViewModel
 import com.echoes.spire.ui.theme.*
+
+// ─── Glow Progress Bar ────────────────────────────────────────────────────────
+
+@Composable
+fun GlowProgressBar(
+    progress: Float,
+    brush: Brush,
+    glowColor: Color,
+    modifier: Modifier = Modifier,
+    height: Dp = 12.dp
+) {
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress.coerceIn(0f, 1f),
+        animationSpec = tween(300),
+        label = "glowProgress"
+    )
+    Canvas(
+        modifier = modifier
+            .height(height)
+            .clip(RoundedCornerShape(height / 2))
+    ) {
+        // Dark track
+        drawRect(color = Color(0xFF0a0e1a))
+        // Filled portion with brush
+        if (animatedProgress > 0f) {
+            drawRect(brush = brush, size = size.copy(width = size.width * animatedProgress))
+        }
+    }
+}
+
+// ─── Icon Circle ──────────────────────────────────────────────────────────────
+
+@Composable
+fun IconCircle(emoji: String, size: Dp = 56.dp, glowColor: Color = AccentColor) {
+    Box(
+        modifier = Modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(
+                Brush.radialGradient(
+                    listOf(glowColor.copy(alpha = 0.3f), Color(0xFF0a0e1a))
+                )
+            )
+            .border(1.dp, glowColor.copy(alpha = 0.5f), CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(emoji, fontSize = (size.value * 0.5f).sp)
+    }
+}
+
+private val AccentColor = Color(0xFF6366f1)
+
+// ─── Status Chip ──────────────────────────────────────────────────────────────
+
+@Composable
+fun StatusChip(emoji: String, label: String, color: Color) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(color.copy(alpha = 0.15f))
+            .border(1.dp, color.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+            .padding(horizontal = 6.dp, vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
+        Text(emoji, fontSize = 10.sp)
+        Text(label, fontSize = 8.sp, color = color, fontWeight = FontWeight.Bold)
+    }
+}
+
+// ─── Run Screen ───────────────────────────────────────────────────────────────
 
 @Composable
 fun RunScreen(state: GameUiState, vm: GameViewModel) {
@@ -34,27 +113,29 @@ fun RunScreen(state: GameUiState, vm: GameViewModel) {
     val lowHp = heroHpPct < 0.20f
     val biomeAccent = Color(android.graphics.Color.parseColor(biome.accentHex))
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        // CombatArenaCard — fixed, never scrolls
+        CombatArena(state, vm, heroHpPct, biomeAccent, burstReady, lowHp)
+
+        // Everything below scrolls independently
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 12.dp, vertical = 10.dp)
-                .padding(bottom = 12.dp),
+                .padding(horizontal = 12.dp),
             verticalArrangement = Arrangement.spacedBy(7.dp)
         ) {
-            // ── Combat Arena ──
-            CombatArena(state, vm, heroHpPct, biomeAccent, burstReady, lowHp)
+            Spacer(Modifier.height(4.dp))
 
-            // ── Relics + Blessings ──
+            // Relics + Blessings
             if (state.heroRelics.isNotEmpty() || state.heroBlessings.isNotEmpty()) {
                 RelicsBlessingsPanel(state)
             }
 
-            // ── Combat log ──
+            // Combat log
             CombatLogPanel(state, vm)
 
-            // ── Return to Hub button ──
+            // Return to Hub button
             Button(
                 onClick = { vm.returnToHub() },
                 modifier = Modifier
@@ -68,6 +149,8 @@ fun RunScreen(state: GameUiState, vm: GameViewModel) {
             ) {
                 Text("💀 Collapse — Return to Hub", fontSize = 11.sp)
             }
+
+            Spacer(modifier = Modifier.height(12.dp))
         }
     }
 }
@@ -83,18 +166,26 @@ fun CombatArena(
     burstReady: Boolean,
     lowHp: Boolean
 ) {
-    val arenaAccent = when {
-        burstReady -> Color(0xFF80f59e0b.toInt())
-        lowHp      -> Color(0x66EF4444)
-        else       -> biomeAccent.copy(alpha = 0.3f)
+    val infiniteTransition = rememberInfiniteTransition(label = "arenaGlow")
+    val glowAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.15f,
+        targetValue = 0.5f,
+        animationSpec = infiniteRepeatable(tween(1200), RepeatMode.Reverse),
+        label = "glowAlpha"
+    )
+
+    val borderColor = when {
+        burstReady -> GoldColor.copy(alpha = glowAlpha)
+        lowHp      -> Color(0xFFEF4444).copy(alpha = glowAlpha)
+        else       -> biomeAccent.copy(alpha = glowAlpha)
     }
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(bottomStart = 14.dp, bottomEnd = 14.dp))
             .background(Color(0xD90a0e1a))
-            .border(1.dp, arenaAccent, RoundedCornerShape(14.dp))
+            .border(1.dp, borderColor, RoundedCornerShape(bottomStart = 14.dp, bottomEnd = 14.dp))
             .padding(14.dp)
     ) {
         Column {
@@ -142,14 +233,15 @@ fun CombatArena(
 
 @Composable
 fun HeroCard(state: GameUiState, heroHpPct: Float, biomeAccent: Color, modifier: Modifier = Modifier) {
-    val hpColor = when {
-        heroHpPct < 0.20f -> Brush.horizontalGradient(listOf(Color(0xFFb91c1c), HpLow))
+    val hpBrush = when {
+        heroHpPct < 0.20f -> DangerGradient
         heroHpPct < 0.50f -> Brush.horizontalGradient(listOf(Color(0xFFb45309), HpMid))
-        else              -> Brush.horizontalGradient(listOf(Color(0xFF15803d), HpHigh))
+        else              -> HealthGradient
     }
     val borderColor = if (heroHpPct < 0.20f) Color(0x80EF4444) else Color(0x386366f1)
     val cls = CLASSES[state.heroCls]
     val wep = WEAPONS[state.heroWeapon]
+    val staminaPct = if (state.heroStaminaMax > 0) state.heroStamina.toFloat() / state.heroStaminaMax else 0f
 
     Column(
         modifier = modifier
@@ -159,54 +251,60 @@ fun HeroCard(state: GameUiState, heroHpPct: Float, biomeAccent: Color, modifier:
             .padding(11.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(cls?.icon ?: "⚔️", fontSize = 40.sp)
-        Text(cls?.name ?: "", color = Color(0xFFc4b5fd), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+        IconCircle(
+            emoji = cls?.icon ?: "⚔️",
+            size = 48.dp,
+            glowColor = biomeAccent
+        )
+        Text(cls?.name ?: "", color = Color(0xFFc4b5fd), fontWeight = FontWeight.Bold, fontSize = 11.sp,
+            modifier = Modifier.padding(top = 4.dp))
         Text("${wep?.icon ?: ""} ${wep?.name ?: ""}", color = TextSecondary, fontSize = 9.sp)
 
-        // HP bar
+        // HP bar (glow)
         Spacer(Modifier.height(7.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(14.dp)
-                .clip(RoundedCornerShape(7.dp))
-                .background(SurfaceDark)
-                .border(1.dp, Color(0x0FFFFFFF), RoundedCornerShape(7.dp))
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(heroHpPct.coerceIn(0f, 1f))
-                    .fillMaxHeight()
-                    .clip(RoundedCornerShape(7.dp))
-                    .background(hpColor)
-            )
-        }
+        GlowProgressBar(
+            progress = heroHpPct,
+            brush = hpBrush,
+            glowColor = if (heroHpPct < 0.20f) HpLow else HpHigh,
+            modifier = Modifier.fillMaxWidth(),
+            height = 14.dp
+        )
         Text(
             text = "${maxOf(0, state.heroHp)} / ${state.heroMaxHp}",
             color = Color(0xFF94a3b8), fontSize = 9.sp,
             modifier = Modifier.padding(top = 3.dp)
         )
 
+        // Stamina bar
+        Spacer(Modifier.height(4.dp))
+        LinearProgressIndicator(
+            progress = { staminaPct.coerceIn(0f, 1f) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .clip(RoundedCornerShape(2.dp)),
+            color = if (state.heroStaminaDrained) Color(0xFFef4444) else Color(0xFF60a5fa),
+            trackColor = Color(0xFF0a0e1a)
+        )
+        Text(
+            text = "⚡${state.heroStamina}/${state.heroStaminaMax}${if (state.heroStaminaDrained) " LOW" else ""}",
+            fontSize = 7.sp,
+            color = if (state.heroStaminaDrained) HpLow else TextSecondary
+        )
+
         // Paladin holy shield
         if (state.heroCls == "paladin" && state.heroHolyShield > 0) {
             Spacer(Modifier.height(4.dp))
             val shieldPct = if (state.heroHolyShieldMax > 0) state.heroHolyShield.toFloat() / state.heroHolyShieldMax else 0f
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(5.dp)
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(SurfaceDark)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(shieldPct)
-                        .fillMaxHeight()
-                        .clip(RoundedCornerShape(3.dp))
-                        .background(Brush.horizontalGradient(listOf(Color(0xFFca8a04), Color(0xFFfde68a))))
-                )
-            }
-            Text("🛡️ ${state.heroHolyShield}", color = Color(0xFFfde68a), fontSize = 8.sp, modifier = Modifier.padding(top = 1.dp))
+            GlowProgressBar(
+                progress = shieldPct,
+                brush = Brush.horizontalGradient(listOf(Color(0xFFca8a04), Color(0xFFfde68a))),
+                glowColor = Color(0xFFfde68a),
+                modifier = Modifier.fillMaxWidth(),
+                height = 5.dp
+            )
+            Text("🛡️ ${state.heroHolyShield}", color = Color(0xFFfde68a), fontSize = 8.sp,
+                modifier = Modifier.padding(top = 1.dp))
         }
 
         // Shadowblade stealth
@@ -238,7 +336,8 @@ fun HeroCard(state: GameUiState, heroHpPct: Float, biomeAccent: Color, modifier:
         }
 
         if (state.heroSnapFreezeStacks > 0) {
-            Text("🧊×${state.heroSnapFreezeStacks}", color = Color(0xFF93c5fd), fontSize = 8.sp, modifier = Modifier.padding(top = 1.dp))
+            Text("🧊×${state.heroSnapFreezeStacks}", color = Color(0xFF93c5fd), fontSize = 8.sp,
+                modifier = Modifier.padding(top = 1.dp))
         }
     }
 }
@@ -261,13 +360,22 @@ fun EnemyCard(state: GameUiState, modifier: Modifier = Modifier) {
     val hpBrush = when {
         state.enemyIsBoss  -> Brush.horizontalGradient(listOf(Color(0xFF92400e), Color(0xFFf59e0b), Color(0xFFf472b6)))
         state.enemyIsElite -> Brush.horizontalGradient(listOf(Color(0xFF9d174d), Color(0xFFf472b6)))
-        else               -> Brush.horizontalGradient(listOf(Color(0xFF991b1b), HpLow))
+        else               -> DangerGradient
     }
     val borderColor = when {
         state.enemyIsBoss  -> Color(0x66F59E0B)
         state.enemyIsElite -> Color(0x59F472B6)
         else               -> Color(0x38EF4444)
     }
+    val enemyGlowColor = when {
+        state.enemyIsBoss  -> GoldColor
+        state.enemyIsElite -> Color(0xFFf472b6)
+        else               -> HpLow
+    }
+
+    // Check shatter readiness
+    val shatterReady = state.enemyFrozen &&
+            (state.heroWeapon == "greatsword" || state.heroWeapon == "warhammer")
 
     Column(
         modifier = modifier
@@ -277,48 +385,47 @@ fun EnemyCard(state: GameUiState, modifier: Modifier = Modifier) {
             .padding(11.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(state.enemyIcon, fontSize = 40.sp)
+        IconCircle(
+            emoji = state.enemyIcon,
+            size = 48.dp,
+            glowColor = enemyGlowColor
+        )
         if (state.enemyIsBoss) {
-            Text(state.enemyName, color = GoldColor, fontWeight = FontWeight.Bold, fontSize = 11.sp, textAlign = TextAlign.Center)
+            Text(state.enemyName, color = GoldColor, fontWeight = FontWeight.Bold, fontSize = 11.sp,
+                textAlign = TextAlign.Center)
         } else {
-            Text(state.enemyName, color = HpLow, fontWeight = FontWeight.Bold, fontSize = 11.sp, textAlign = TextAlign.Center)
+            Text(state.enemyName, color = HpLow, fontWeight = FontWeight.Bold, fontSize = 11.sp,
+                textAlign = TextAlign.Center)
         }
         if (state.enemyIsElite) Text("⚡ ELITE", color = Color(0xFFfb923c), fontSize = 8.sp)
         if (state.enemyIsBoss)  Text("👑 WARDEN", color = GoldColor, fontSize = 8.sp)
 
-        // HP bar
+        // HP bar (glow)
         Spacer(Modifier.height(7.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(14.dp)
-                .clip(RoundedCornerShape(7.dp))
-                .background(SurfaceDark)
-                .border(1.dp, Color(0x0FFFFFFF), RoundedCornerShape(7.dp))
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(enemyHpPct.coerceIn(0f, 1f))
-                    .fillMaxHeight()
-                    .clip(RoundedCornerShape(7.dp))
-                    .background(hpBrush)
-            )
-        }
+        GlowProgressBar(
+            progress = enemyHpPct,
+            brush = hpBrush,
+            glowColor = enemyGlowColor,
+            modifier = Modifier.fillMaxWidth(),
+            height = 14.dp
+        )
         Text(
             text = "${maxOf(0, state.enemyHp)} / ${state.enemyMaxHp}",
             color = Color(0xFF94a3b8), fontSize = 9.sp,
             modifier = Modifier.padding(top = 3.dp)
         )
 
-        // Status icons
-        Row(
+        // Status chips
+        FlowRow(
             modifier = Modifier.padding(top = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
-            if (state.enemyPoisoned) Text("☠️", fontSize = 14.sp)
-            if (state.enemyFrozen)   Text("❄️", fontSize = 14.sp)
-            if (state.enemySnapFreezeReady) Text("⚡", fontSize = 14.sp)
-            if (state.enemyStunned)  Text("💫", fontSize = 14.sp)
+            if (state.enemyPoisoned) StatusChip("☠️", "POISON", Color(0xFF86efac))
+            if (state.enemyFrozen)   StatusChip("❄️", "FROZEN", Color(0xFF93c5fd))
+            if (state.enemySnapFreezeReady && !state.enemyFrozen) StatusChip("⚡", "SNAP", Color(0xFF60a5fa))
+            if (state.enemyStunned)  StatusChip("💫", "STUNNED", GoldColor)
+            if (shatterReady)        StatusChip("💥", "SHATTER READY", GoldColor)
         }
 
         if (!state.enemyPoisoned && state.enemyPoisonBuildup > 4.0) {
@@ -354,21 +461,13 @@ fun AttackBar(progress: Float, color: Color, label: String, stunned: Boolean) {
             )
         }
         Spacer(Modifier.height(2.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(4.dp)
-                .clip(RoundedCornerShape(2.dp))
-                .background(SurfaceDark)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(if (stunned) 1f else progress.coerceIn(0f, 1f))
-                    .fillMaxHeight()
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(if (stunned) GoldColor else color)
-            )
-        }
+        GlowProgressBar(
+            progress = if (stunned) 1f else progress,
+            brush = if (stunned) GoldGradient else SolidColor(color),
+            glowColor = if (stunned) GoldColor else color,
+            modifier = Modifier.fillMaxWidth(),
+            height = 4.dp
+        )
     }
 }
 
@@ -386,44 +485,32 @@ fun BurstSection(state: GameUiState, vm: GameViewModel, burstReady: Boolean) {
         Text("⚡ Burst Charge ${(burstPct * 100).toInt()}%", color = TextSecondary, fontSize = 9.sp)
         Box(
             modifier = Modifier
+                .defaultMinSize(minWidth = 44.dp, minHeight = 44.dp)
                 .clip(RoundedCornerShape(4.dp))
                 .background(if (state.autoBurst) Color(0x26F59E0B) else Color.Transparent)
                 .border(1.dp, if (state.autoBurst) GoldColor else Color(0xFF334155), RoundedCornerShape(4.dp))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
-                ) { vm.setAutoBurst(!state.autoBurst) }
-                .padding(horizontal = 7.dp, vertical = 2.dp)
+                ) { vm.setAutoBurst(!state.autoBurst) },
+            contentAlignment = Alignment.Center
         ) {
             Text(
                 text = "AUTO ${if (state.autoBurst) "ON" else "OFF"}",
                 color = if (state.autoBurst) GoldColor else TextMuted,
-                fontSize = 8.sp
+                fontSize = 8.sp,
+                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
             )
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(10.dp)
-            .clip(RoundedCornerShape(5.dp))
-            .background(SurfaceDark)
-            .padding(bottom = 6.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(burstPct.coerceIn(0f, 1f))
-                .fillMaxHeight()
-                .clip(RoundedCornerShape(5.dp))
-                .background(
-                    if (burstReady)
-                        Brush.horizontalGradient(listOf(Color(0xFFf59e0b), Color(0xFFfcd34d)))
-                    else
-                        Brush.horizontalGradient(listOf(AccentIndigo, Color(0xFF818cf8)))
-                )
-        )
-    }
+    GlowProgressBar(
+        progress = burstPct,
+        brush = if (burstReady) GoldGradient else Brush.horizontalGradient(listOf(AccentIndigo, Color(0xFF818cf8))),
+        glowColor = if (burstReady) GoldColor else AccentIndigo,
+        modifier = Modifier.fillMaxWidth(),
+        height = 10.dp
+    )
 
     Spacer(Modifier.height(6.dp))
 
@@ -461,27 +548,39 @@ fun RelicsBlessingsPanel(state: GameUiState) {
             .padding(9.dp)
     ) {
         if (state.heroRelics.isNotEmpty()) {
-            Text("RELICS", color = AccentIndigo, fontSize = 8.sp, letterSpacing = 2.sp, modifier = Modifier.padding(bottom = 4.dp))
+            Text("RELICS", color = AccentIndigo, fontSize = 8.sp, letterSpacing = 2.sp,
+                modifier = Modifier.padding(bottom = 4.dp))
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.fillMaxWidth().padding(bottom = if (state.heroBlessings.isNotEmpty()) 6.dp else 0.dp)
+                modifier = Modifier.fillMaxWidth()
+                    .padding(bottom = if (state.heroBlessings.isNotEmpty()) 6.dp else 0.dp)
             ) {
                 state.heroRelics.forEach { r ->
+                    val accentColor = rarityColor(r.rarity)
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(5.dp))
                             .background(Color(0x0AFFFFFF))
-                            .border(1.dp, rarityColor(r.rarity), RoundedCornerShape(5.dp))
-                            .padding(horizontal = 7.dp, vertical = 3.dp)
+                            .drawBehind {
+                                // Colored left accent line (3dp wide)
+                                drawRect(
+                                    color = accentColor,
+                                    topLeft = Offset(0f, 0f),
+                                    size = size.copy(width = 3.dp.toPx())
+                                )
+                            }
+                            .border(1.dp, accentColor.copy(alpha = 0.35f), RoundedCornerShape(5.dp))
+                            .padding(horizontal = 9.dp, vertical = 3.dp)
                     ) {
-                        Text("${r.icon} ${r.name}", color = rarityColor(r.rarity), fontSize = 9.sp)
+                        Text("${r.icon} ${r.name}", color = accentColor, fontSize = 9.sp)
                     }
                 }
             }
         }
         if (state.heroBlessings.isNotEmpty()) {
-            Text("BLESSINGS", color = GoldColor, fontSize = 8.sp, letterSpacing = 2.sp, modifier = Modifier.padding(bottom = 4.dp))
+            Text("BLESSINGS", color = GoldColor, fontSize = 8.sp, letterSpacing = 2.sp,
+                modifier = Modifier.padding(bottom = 4.dp))
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -580,6 +679,8 @@ fun CombatLogPanel(state: GameUiState, vm: GameViewModel) {
 
 @Composable
 fun BlessingOverlay(state: GameUiState, vm: GameViewModel) {
+    var overlayClickHandled by remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -605,7 +706,12 @@ fun BlessingOverlay(state: GameUiState, vm: GameViewModel) {
             ) {
                 state.blessingChoices?.forEach { b ->
                     Button(
-                        onClick = { vm.chooseBlessing(b) },
+                        onClick = {
+                            if (!overlayClickHandled) {
+                                overlayClickHandled = true
+                                vm.chooseBlessing(b)
+                            }
+                        },
                         modifier = Modifier
                             .defaultMinSize(minWidth = 85.dp, minHeight = 44.dp)
                             .weight(1f, fill = false),
@@ -614,8 +720,10 @@ fun BlessingOverlay(state: GameUiState, vm: GameViewModel) {
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(b.icon, fontSize = 22.sp)
-                            Text(b.name, color = Color(0xFFc4b5fd), fontWeight = FontWeight.Bold, fontSize = 10.sp, modifier = Modifier.padding(top = 3.dp))
-                            Text(b.desc, color = TextSecondary, fontSize = 9.sp, modifier = Modifier.padding(top = 2.dp), textAlign = TextAlign.Center)
+                            Text(b.name, color = Color(0xFFc4b5fd), fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp, modifier = Modifier.padding(top = 3.dp))
+                            Text(b.desc, color = TextSecondary, fontSize = 9.sp,
+                                modifier = Modifier.padding(top = 2.dp), textAlign = TextAlign.Center)
                         }
                     }
                 }
@@ -626,6 +734,8 @@ fun BlessingOverlay(state: GameUiState, vm: GameViewModel) {
 
 @Composable
 fun RelicChestOverlay(state: GameUiState, vm: GameViewModel) {
+    var overlayClickHandled by remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -653,7 +763,12 @@ fun RelicChestOverlay(state: GameUiState, vm: GameViewModel) {
                     val rarColor = rarityColor(r.rarity)
                     val cursed = r.rarity == "cursed"
                     Button(
-                        onClick = { vm.chooseRelic(r) },
+                        onClick = {
+                            if (!overlayClickHandled) {
+                                overlayClickHandled = true
+                                vm.chooseRelic(r)
+                            }
+                        },
                         modifier = Modifier.defaultMinSize(minWidth = 100.dp, minHeight = 44.dp).weight(1f),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -662,16 +777,24 @@ fun RelicChestOverlay(state: GameUiState, vm: GameViewModel) {
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(r.icon, fontSize = 26.sp)
-                            Text(r.name, color = rarColor, fontWeight = FontWeight.Bold, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
+                            Text(r.name, color = rarColor, fontWeight = FontWeight.Bold, fontSize = 11.sp,
+                                modifier = Modifier.padding(top = 4.dp))
                             Text(r.rarity.uppercase(), color = rarColor, fontSize = 9.sp, letterSpacing = 1.sp)
-                            if (cursed) Text("⚠️ CURSED", color = HpLow, fontSize = 9.sp, modifier = Modifier.padding(top = 2.dp))
-                            Text(r.desc, color = Color(0xFF94a3b8), fontSize = 9.sp, modifier = Modifier.padding(top = 4.dp), textAlign = TextAlign.Center, lineHeight = 12.sp)
+                            if (cursed) Text("⚠️ CURSED", color = HpLow, fontSize = 9.sp,
+                                modifier = Modifier.padding(top = 2.dp))
+                            Text(r.desc, color = Color(0xFF94a3b8), fontSize = 9.sp,
+                                modifier = Modifier.padding(top = 4.dp), textAlign = TextAlign.Center, lineHeight = 12.sp)
                         }
                     }
                 }
             }
             Button(
-                onClick = { vm.skipRelic() },
+                onClick = {
+                    if (!overlayClickHandled) {
+                        overlayClickHandled = true
+                        vm.skipRelic()
+                    }
+                },
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1e293b))
             ) {
@@ -684,6 +807,8 @@ fun RelicChestOverlay(state: GameUiState, vm: GameViewModel) {
 @Composable
 fun MilestoneRelicOverlay(state: GameUiState, vm: GameViewModel) {
     val mr = state.milestoneRelic ?: return
+    var overlayClickHandled by remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -695,21 +820,36 @@ fun MilestoneRelicOverlay(state: GameUiState, vm: GameViewModel) {
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(14.dp)
         ) {
-            Text("⚠️ BOSS RELIC", color = GoldColor, fontSize = 9.sp, letterSpacing = 4.sp, modifier = Modifier.padding(bottom = 8.dp))
-            Text(mr.icon, fontSize = 44.sp, modifier = Modifier.padding(bottom = 6.dp))
-            Text(mr.name, color = GoldColor, fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(bottom = 4.dp))
-            Text(mr.desc, color = Color(0xFF94a3b8), fontSize = 10.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(bottom = 3.dp))
-            Text("Powerful — with a trade-off.", color = HpLow, fontSize = 9.sp, modifier = Modifier.padding(bottom = 12.dp))
+            Text("⚠️ BOSS RELIC", color = GoldColor, fontSize = 9.sp, letterSpacing = 4.sp,
+                modifier = Modifier.padding(bottom = 8.dp))
+            IconCircle(emoji = mr.icon, size = 56.dp, glowColor = GoldColor)
+            Spacer(Modifier.height(8.dp))
+            Text(mr.name, color = GoldColor, fontWeight = FontWeight.Bold, fontSize = 14.sp,
+                modifier = Modifier.padding(bottom = 4.dp))
+            Text(mr.desc, color = Color(0xFF94a3b8), fontSize = 10.sp, textAlign = TextAlign.Center,
+                modifier = Modifier.padding(bottom = 3.dp))
+            Text("Powerful — with a trade-off.", color = HpLow, fontSize = 9.sp,
+                modifier = Modifier.padding(bottom = 12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                 Button(
-                    onClick = { vm.chooseMilestone(mr) },
+                    onClick = {
+                        if (!overlayClickHandled) {
+                            overlayClickHandled = true
+                            vm.chooseMilestone(mr)
+                        }
+                    },
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFb45309))
                 ) {
                     Text("Accept", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
                 Button(
-                    onClick = { vm.skipMilestone() },
+                    onClick = {
+                        if (!overlayClickHandled) {
+                            overlayClickHandled = true
+                            vm.skipMilestone()
+                        }
+                    },
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1e293b))
                 ) {
@@ -734,10 +874,14 @@ fun DeadOverlay(state: GameUiState, vm: GameViewModel) {
             modifier = Modifier.padding(14.dp)
         ) {
             Text("💀", fontSize = 38.sp, modifier = Modifier.padding(bottom = 6.dp))
-            Text("The Hero Has Fallen", color = HpLow, fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(bottom = 3.dp))
-            Text("Floor ${state.runFloor} · ${state.killCount} kills", color = TextSecondary, fontSize = 10.sp, modifier = Modifier.padding(bottom = 7.dp))
-            Text("+💰${fmtN(state.runGold)}", color = GoldColor, fontSize = 12.sp, modifier = Modifier.padding(bottom = 1.dp))
-            Text("+💜${fmtN(state.runSouls)}", color = SoulsColor, fontSize = 12.sp, modifier = Modifier.padding(bottom = 12.dp))
+            Text("The Hero Has Fallen", color = HpLow, fontWeight = FontWeight.Bold, fontSize = 16.sp,
+                modifier = Modifier.padding(bottom = 3.dp))
+            Text("Floor ${state.runFloor} · ${state.killCount} kills", color = TextSecondary, fontSize = 10.sp,
+                modifier = Modifier.padding(bottom = 7.dp))
+            Text("+💰${fmtN(state.runGold)}", color = GoldColor, fontSize = 12.sp,
+                modifier = Modifier.padding(bottom = 1.dp))
+            Text("+💜${fmtN(state.runSouls)}", color = SoulsColor, fontSize = 12.sp,
+                modifier = Modifier.padding(bottom = 12.dp))
             Button(
                 onClick = { vm.returnToHub() },
                 modifier = Modifier.defaultMinSize(minHeight = 48.dp),
