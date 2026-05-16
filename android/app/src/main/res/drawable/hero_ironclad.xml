@@ -1,0 +1,51 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp" android:height="160dp"
+    android:viewportWidth="100" android:viewportHeight="160">
+  <!-- Background -->
+  <path android:pathData="M50,80 m-60,0 a60,80 0 1,0 120,0 a60,80 0 1,0 -120,0" android:fillColor="#0f172a"/>
+  <path android:pathData="M50,80 m-38,0 a38,55 0 1,0 76,0 a38,55 0 1,0 -76,0" android:fillColor="#0a0f1e"/>
+  <!-- Legs (thick) -->
+  <path android:pathData="M30,108 L46,108 L48,148 L28,148 Z" android:fillColor="#1e293b"/>
+  <path android:pathData="M54,108 L70,108 L72,148 L52,148 Z" android:fillColor="#1e293b"/>
+  <!-- Boot plates -->
+  <path android:pathData="M26,140 L50,140 L50,152 L26,152 Z" android:fillColor="#0f172a"/>
+  <path android:pathData="M50,140 L74,140 L74,152 L50,152 Z" android:fillColor="#0f172a"/>
+  <!-- Boot trim -->
+  <path android:pathData="M26,140 L50,140" android:strokeColor="#475569" android:strokeWidth="1.5" android:fillColor="#00000000"/>
+  <path android:pathData="M50,140 L74,140" android:strokeColor="#475569" android:strokeWidth="1.5" android:fillColor="#00000000"/>
+  <!-- Torso (wide, thick) -->
+  <path android:pathData="M24,58 L76,58 L78,110 L22,110 Z" android:fillColor="#334155"/>
+  <!-- Chest plate details -->
+  <path android:pathData="M30,65 L70,65 L68,100 L32,100 Z" android:fillColor="#1e293b"/>
+  <path android:pathData="M38,70 L62,70 L60,95 L40,95 Z" android:fillColor="#0f172a"/>
+  <!-- Center chest emblem -->
+  <path android:pathData="M50,78 L53,73 L58,78 L53,83 Z" android:fillColor="#94a3b8"/>
+  <path android:pathData="M50,78 L47,73 L42,78 L47,83 Z" android:fillColor="#64748b"/>
+  <!-- Shoulders (massive pauldrons) -->
+  <path android:pathData="M10,52 Q8,38 18,35 Q28,33 32,45 L28,60 L18,62 Z" android:fillColor="#334155"/>
+  <path android:pathData="M12,50 Q14,40 22,38 Q28,40 30,50 L26,60 L16,58 Z" android:fillColor="#475569"/>
+  <path android:pathData="M90,52 Q92,38 82,35 Q72,33 68,45 L72,60 L82,62 Z" android:fillColor="#334155"/>
+  <path android:pathData="M88,50 Q86,40 78,38 Q72,40 70,50 L74,60 L84,58 Z" android:fillColor="#475569"/>
+  <!-- Arms -->
+  <path android:pathData="M10,62 L22,58 L26,105 L12,108 Z" android:fillColor="#1e293b"/>
+  <path android:pathData="M90,62 L78,58 L74,105 L88,108 Z" android:fillColor="#1e293b"/>
+  <!-- Gauntlets -->
+  <path android:pathData="M8,105 L26,102 L28,118 L6,120 Z" android:fillColor="#334155"/>
+  <path android:pathData="M92,105 L74,102 L72,118 L94,120 Z" android:fillColor="#334155"/>
+  <!-- Helmet (blocky, full face) -->
+  <path android:pathData="M28,32 L72,32 L74,58 L26,58 Z" android:fillColor="#334155"/>
+  <!-- Helmet top ridge -->
+  <path android:pathData="M38,20 L62,20 L68,32 L32,32 Z" android:fillColor="#475569"/>
+  <path android:pathData="M44,12 L56,12 L60,20 L40,20 Z" android:fillColor="#334155"/>
+  <!-- Visor slit -->
+  <path android:pathData="M30,42 L70,42 L70,48 L30,48 Z" android:fillColor="#0f172a"/>
+  <!-- Visor glow -->
+  <path android:pathData="M32,43 L68,43 L68,47 L32,47 Z" android:fillColor="#1e3a5f"/>
+  <path android:pathData="M32,44 L68,44" android:strokeColor="#94a3b8" android:strokeWidth="0.8" android:fillColor="#00000000"/>
+  <!-- Helmet bolts -->
+  <path android:pathData="M32,34 m-2,0 a2,2 0 1,0 4,0 a2,2 0 1,0 -4,0" android:fillColor="#64748b"/>
+  <path android:pathData="M68,34 m-2,0 a2,2 0 1,0 4,0 a2,2 0 1,0 -4,0" android:fillColor="#64748b"/>
+  <!-- Armor plate lines -->
+  <path android:pathData="M30,65 L70,65" android:strokeColor="#475569" android:strokeWidth="0.8" android:fillColor="#00000000"/>
+  <path android:pathData="M28,85 L72,85" android:strokeColor="#1e293b" android:strokeWidth="0.8" android:fillColor="#00000000"/>
+</vector>

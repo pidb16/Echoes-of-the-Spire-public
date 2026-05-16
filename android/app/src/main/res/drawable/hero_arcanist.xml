@@ -1,0 +1,40 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp" android:height="160dp"
+    android:viewportWidth="100" android:viewportHeight="160">
+  <!-- Background -->
+  <path android:pathData="M50,80 m-60,0 a60,80 0 1,0 120,0 a60,80 0 1,0 -120,0" android:fillColor="#1a0d2e"/>
+  <path android:pathData="M50,80 m-35,0 a35,50 0 1,0 70,0 a35,50 0 1,0 -70,0" android:fillColor="#110820"/>
+  <!-- Robe base (wide, flowing) -->
+  <path android:pathData="M30,70 Q15,100 18,148 L82,148 Q85,100 70,70 Z" android:fillColor="#2e1065"/>
+  <!-- Robe inner shadow -->
+  <path android:pathData="M38,75 Q28,105 30,148 L70,148 Q72,105 62,75 Z" android:fillColor="#1e0a4a"/>
+  <!-- Robe trim -->
+  <path android:pathData="M18,148 L82,148 L80,152 L20,152 Z" android:fillColor="#7c3aed"/>
+  <!-- Hood -->
+  <path android:pathData="M32,55 Q28,35 50,28 Q72,35 68,55 Q65,70 50,72 Q35,70 32,55 Z" android:fillColor="#3b0764"/>
+  <!-- Hood shadow inside -->
+  <path android:pathData="M36,58 Q40,50 50,48 Q60,50 64,58 Q60,68 50,70 Q40,68 36,58 Z" android:fillColor="#1c0533"/>
+  <!-- Face in shadow -->
+  <path android:pathData="M40,55 Q50,58 60,55 Q58,65 50,67 Q42,65 40,55 Z" android:fillColor="#0d0220"/>
+  <!-- Eyes glow -->
+  <path android:pathData="M44,58 m-2.5,0 a2.5,2 0 1,0 5,0 a2.5,2 0 1,0 -5,0" android:fillColor="#a855f7"/>
+  <path android:pathData="M56,58 m-2.5,0 a2.5,2 0 1,0 5,0 a2.5,2 0 1,0 -5,0" android:fillColor="#a855f7"/>
+  <!-- Staff (tall, left side) -->
+  <path android:pathData="M24,148 L26,148 L28,55 L26,53 L24,55 Z" android:fillColor="#581c87"/>
+  <!-- Staff orb top -->
+  <path android:pathData="M22,45 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0" android:fillColor="#7c3aed"/>
+  <path android:pathData="M22,45 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" android:fillColor="#d8b4fe"/>
+  <!-- Staff crystals -->
+  <path android:pathData="M15,40 L19,45 L15,50 L12,45 Z" android:fillColor="#a855f7"/>
+  <path android:pathData="M29,40 L33,45 L29,50 L26,45 Z" android:fillColor="#a855f7"/>
+  <!-- Floating energy orb (right hand) -->
+  <path android:pathData="M72,90 m-10,0 a10,10 0 1,0 20,0 a10,10 0 1,0 -20,0" android:fillColor="#581c87"/>
+  <path android:pathData="M72,90 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0" android:fillColor="#a855f7"/>
+  <path android:pathData="M72,90 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0" android:fillColor="#e9d5ff"/>
+  <!-- Energy wisps -->
+  <path android:pathData="M65,82 Q60,75 63,68" android:strokeColor="#a855f7" android:strokeWidth="1.5" android:fillColor="#00000000"/>
+  <path android:pathData="M78,84 Q84,78 82,70" android:strokeColor="#7c3aed" android:strokeWidth="1.2" android:fillColor="#00000000"/>
+  <!-- Robe stars/runes -->
+  <path android:pathData="M45,100 L46,97 L47,100 L50,101 L47,102 L46,105 L45,102 L42,101 Z" android:fillColor="#7c3aed"/>
+  <path android:pathData="M58,115 L59,113 L60,115 L62,116 L60,117 L59,119 L58,117 L56,116 Z" android:fillColor="#6d28d9"/>
+</vector>

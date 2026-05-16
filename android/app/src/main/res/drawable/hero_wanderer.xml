@@ -1,0 +1,40 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp" android:height="160dp"
+    android:viewportWidth="100" android:viewportHeight="160">
+  <!-- Background radial gradient approximated with layered circles -->
+  <path android:pathData="M50,80 m-60,0 a60,80 0 1,0 120,0 a60,80 0 1,0 -120,0" android:fillColor="#1a1040"/>
+  <path android:pathData="M50,80 m-40,0 a40,55 0 1,0 80,0 a40,55 0 1,0 -80,0" android:fillColor="#12082a"/>
+  <!-- Cape flowing behind -->
+  <path android:pathData="M35,65 Q20,90 22,130 Q35,125 50,128 Q65,125 78,130 Q80,90 65,65 Z" android:fillColor="#2d1b6b"/>
+  <!-- Body/torso armor -->
+  <path android:pathData="M38,60 L62,60 L65,100 L50,105 L35,100 Z" android:fillColor="#3730a3"/>
+  <!-- Shoulder pauldrons -->
+  <path android:pathData="M30,58 Q25,52 28,48 Q35,45 40,52 L38,60 Z" android:fillColor="#4338ca"/>
+  <path android:pathData="M70,58 Q75,52 72,48 Q65,45 60,52 L62,60 Z" android:fillColor="#4338ca"/>
+  <!-- Head -->
+  <path android:pathData="M50,28 m-11,0 a11,13 0 1,0 22,0 a11,13 0 1,0 -22,0" android:fillColor="#4c1d95"/>
+  <!-- Helmet visor -->
+  <path android:pathData="M39,32 L61,32 L63,38 L37,38 Z" android:fillColor="#6366f1"/>
+  <!-- Helmet crest -->
+  <path android:pathData="M45,18 L50,10 L55,18 L53,28 L47,28 Z" android:fillColor="#818cf8"/>
+  <!-- Sword blade (raised right arm) -->
+  <path android:pathData="M68,55 L72,50 L76,10 L74,8 L70,10 L66,50 Z" android:fillColor="#c7d2fe"/>
+  <!-- Sword crossguard -->
+  <path android:pathData="M63,50 L81,50 L81,55 L63,55 Z" android:fillColor="#818cf8"/>
+  <!-- Sword hilt -->
+  <path android:pathData="M70,55 L72,55 L74,65 L68,65 Z" android:fillColor="#6366f1"/>
+  <!-- Shield (left arm) -->
+  <path android:pathData="M28,55 Q18,68 20,85 Q28,95 36,88 Q40,75 38,60 Z" android:fillColor="#3730a3"/>
+  <path android:pathData="M30,62 Q22,72 24,84 Q30,90 35,85 Q38,75 37,63 Z" android:fillColor="#4338ca"/>
+  <!-- Shield emblem -->
+  <path android:pathData="M30,73 L33,69 L36,73 L33,77 Z" android:fillColor="#818cf8"/>
+  <!-- Legs -->
+  <path android:pathData="M38,100 L45,100 L43,140 L36,140 Z" android:fillColor="#312e81"/>
+  <path android:pathData="M55,100 L62,100 L64,140 L57,140 Z" android:fillColor="#312e81"/>
+  <!-- Boots -->
+  <path android:pathData="M33,135 L46,135 L47,148 Q40,152 33,148 Z" android:fillColor="#1e1b4b"/>
+  <path android:pathData="M54,135 L67,135 L67,148 Q60,152 53,148 Z" android:fillColor="#1e1b4b"/>
+  <!-- Accent glow lines -->
+  <path android:pathData="M39,32 L61,32" android:strokeColor="#818cf8" android:strokeWidth="1" android:fillColor="#00000000"/>
+  <path android:pathData="M38,60 L62,60" android:strokeColor="#6366f1" android:strokeWidth="0.8" android:fillColor="#00000000"/>
+</vector>
