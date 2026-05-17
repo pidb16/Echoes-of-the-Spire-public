@@ -1,6 +1,5 @@
 package com.echoes.spire.ui
 
-import android.os.Build
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
@@ -54,15 +53,7 @@ fun GameIcon(
     size: Dp = 20.dp,
     glowRadius: Dp = 0.dp
 ) {
-    val iconMod = if (glowRadius > 0.dp && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        modifier.size(size)
-            .graphicsLayer {
-                renderEffect = RenderEffect
-                    .createBlurEffect(glowRadius.toPx(), glowRadius.toPx(), Shader.TileMode.DECAL)
-                    .asComposeRenderEffect()
-            }
-    } else if (glowRadius > 0.dp) {
-        // Fallback: simple shadow glow via drawBehind
+    val iconMod = if (glowRadius > 0.dp) {
         modifier.size(size).drawBehind {
             drawCircle(
                 color = tint.copy(alpha = 0.35f),
