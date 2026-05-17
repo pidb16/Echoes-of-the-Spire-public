@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
@@ -211,54 +212,83 @@ fun ExpeditionTab(state: GameUiState, vm: GameViewModel) {
         }
     }
 
-    // Weapon selector
-    GlassCard(modifier = Modifier.fillMaxWidth().padding(bottom = 9.dp)) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
-            modifier = Modifier.padding(bottom = 7.dp)
-        ) {
-            GameIcon(iconId = "sword", tint = AccentColor, size = 12.dp)
-            Text(
-                text = "WEAPON",
-                color = AccentColor, fontSize = 9.sp,
-                fontFamily = CinzelFamily,
-                letterSpacing = 2.sp
-            )
-        }
-        val weaponList = WEAPONS.entries.toList()
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 5.dp),
-            horizontalArrangement = Arrangement.spacedBy(5.dp)
-        ) {
-            weaponList.take(4).forEach { (id, w) ->
-                WeaponTile(
-                    id = id, w = w,
-                    selected = state.selWeapon == id,
-                    modifier = Modifier.weight(1f),
-                    onClick = { vm.setSelWeapon(id) }
+    // Weapon selector — frosted glass panel
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 9.dp)
+            .clip(RoundedCornerShape(14.dp))
+    ) {
+        // Blur layer — blurs own content creating a soft glow bloom
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    Brush.radialGradient(
+                        listOf(
+                            AccentColor.copy(alpha = 0.08f),
+                            Color(0xFF070810).copy(alpha = 0.92f)
+                        )
+                    )
+                )
+                .blur(radius = 24.dp)
+        )
+        // Frosted glass surface
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(Color(0xCC070810))
+                .border(1.dp, AccentColor.copy(alpha = 0.22f), RoundedCornerShape(14.dp))
+        )
+        // Actual content
+        Column(modifier = Modifier.padding(10.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                modifier = Modifier.padding(bottom = 7.dp)
+            ) {
+                GameIcon(iconId = "sword", tint = AccentColor, size = 12.dp)
+                Text(
+                    text = "WEAPON",
+                    color = AccentColor, fontSize = 9.sp,
+                    fontFamily = CinzelFamily,
+                    letterSpacing = 2.sp
                 )
             }
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(5.dp)
-        ) {
-            weaponList.drop(4).forEach { (id, w) ->
-                WeaponTile(
-                    id = id, w = w,
-                    selected = state.selWeapon == id,
-                    modifier = Modifier.weight(1f),
-                    onClick = { vm.setSelWeapon(id) }
+            val weaponList = WEAPONS.entries.toList()
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 5.dp),
+                horizontalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+                weaponList.take(4).forEach { (id, w) ->
+                    WeaponTile(
+                        id = id, w = w,
+                        selected = state.selWeapon == id,
+                        modifier = Modifier.weight(1f),
+                        onClick = { vm.setSelWeapon(id) }
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+                weaponList.drop(4).forEach { (id, w) ->
+                    WeaponTile(
+                        id = id, w = w,
+                        selected = state.selWeapon == id,
+                        modifier = Modifier.weight(1f),
+                        onClick = { vm.setSelWeapon(id) }
+                    )
+                }
+            }
+            WEAPONS[state.selWeapon]?.desc?.let { desc ->
+                Text(
+                    text = desc,
+                    color = TextSecondary, fontSize = 10.sp,
+                    modifier = Modifier.padding(top = 7.dp)
                 )
             }
-        }
-        WEAPONS[state.selWeapon]?.desc?.let { desc ->
-            Text(
-                text = desc,
-                color = TextSecondary, fontSize = 10.sp,
-                modifier = Modifier.padding(top = 7.dp)
-            )
         }
     }
 
@@ -392,7 +422,10 @@ fun ExpeditionTab(state: GameUiState, vm: GameViewModel) {
                 Text("Daily: F${state.dailyBest}", color = TextSecondary, fontSize = 10.sp)
             }
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text("Best: F${state.bestFloor}", color = TextSecondary, fontSize = 10.sp)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text("Best: ", color = TextSecondary, fontSize = 10.sp)
+                    GradientText("F${state.bestFloor}", AccentTextBrush, 10.sp)
+                }
                 Text("AP: ×${String.format("%.1f", state.ancPow)}", color = TextSecondary, fontSize = 10.sp)
                 Text("Rift: ${if (state.riftUnlocked) "Open" else "F100"}", color = TextSecondary, fontSize = 10.sp)
             }
@@ -713,9 +746,18 @@ fun ClassCard(
             Text(cls.desc, color = TextSecondary, fontSize = 9.sp,
                 modifier = Modifier.padding(top = 2.dp), lineHeight = 12.sp)
             Row(modifier = Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                StatBadge("heart", cls.hp.toString(), HpHigh)
-                StatBadge("sword", cls.atk.toString(), GoldColor)
-                StatBadge("shield", cls.def.toString(), FrostColor)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                    GameIcon(iconId = "heart", tint = HpHigh, size = 12.dp)
+                    Text(cls.hp.toString(), style = textShadowStyle(10.sp, HpHigh))
+                }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                    GameIcon(iconId = "sword", tint = GoldColor, size = 12.dp)
+                    Text(cls.atk.toString(), style = textShadowStyle(10.sp, GoldColor))
+                }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                    GameIcon(iconId = "shield", tint = FrostColor, size = 12.dp)
+                    Text(cls.def.toString(), style = textShadowStyle(10.sp, FrostColor))
+                }
             }
         }
     }

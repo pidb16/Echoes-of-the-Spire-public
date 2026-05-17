@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.sp
 import com.echoes.spire.data.fmtN
 import com.echoes.spire.ui.GlassProgressBar
 import com.echoes.spire.ui.GradientBorderCard
+import com.echoes.spire.ui.GradientText
+import com.echoes.spire.ui.GoldTextBrush
 import com.echoes.spire.ui.StatBadge
 import com.echoes.spire.ui.theme.*
 
@@ -108,10 +110,10 @@ fun UpgradeRow(
                             contentColor   = Color.White
                         )
                     ) {
-                        Text(
+                        GradientText(
                             text = "$currency${fmtN(cost)}",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
+                            brush = GoldTextBrush,
+                            fontSize = 11.sp
                         )
                     }
                 }

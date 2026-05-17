@@ -67,6 +67,7 @@ fun EchoesApp() {
 
             // ── Screen Content ──
             Box(modifier = Modifier.weight(1f)) {
+                AmbientNoiseLayer(modifier = Modifier.fillMaxSize())
                 when (state.screen) {
                     AppScreen.HUB    -> HubScreen(state, vm)
                     AppScreen.RUN    -> RunScreen(state, vm)
@@ -105,9 +106,18 @@ fun TopInfoBar(state: GameUiState) {
             horizontalArrangement = Arrangement.spacedBy(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            StatBadge("gold",   fmtN(state.gold),         GoldColor)
-            StatBadge("soul",   fmtN(state.souls),         SoulsColor)
-            StatBadge("ribbon", state.ribbons.toString(),  RibbonGreen)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                GameIcon(iconId = "gold", tint = GoldColor, size = 12.dp)
+                GradientText(fmtN(state.gold), GoldTextBrush, 13.sp)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                GameIcon(iconId = "soul", tint = SoulsColor, size = 12.dp)
+                GradientText(fmtN(state.souls), SoulsTextBrush, 13.sp)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                GameIcon(iconId = "ribbon", tint = RibbonGreen, size = 12.dp)
+                GradientText(state.ribbons.toString(), RibbonTextBrush, 13.sp)
+            }
         }
 
         Text(

@@ -201,9 +201,9 @@ fun CombatArena(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Text(
-                        "Floor ${state.runFloor}",
-                        color = TextMuted,
+                    GradientText(
+                        text = "Floor ${state.runFloor}",
+                        brush = AccentTextBrush,
                         fontSize = 9.sp,
                         fontFamily = CinzelFamily,
                         letterSpacing = 2.sp
@@ -282,9 +282,14 @@ fun HeroCard(state: GameUiState, heroHpPct: Float, biomeAccent: Color, modifier:
                 modifier = Modifier.fillMaxWidth(),
                 height = 14.dp
             )
-            Text(
+            GradientText(
                 text = "${maxOf(0, state.heroHp)} / ${state.heroMaxHp}",
-                color = Color(0xFF94a3b8), fontSize = 9.sp,
+                brush = when {
+                    heroHpPct > 0.5f  -> HpHighTextBrush
+                    heroHpPct > 0.2f  -> GoldTextBrush
+                    else              -> HpLowTextBrush
+                },
+                fontSize = 9.sp,
                 modifier = Modifier.padding(top = 3.dp)
             )
 
@@ -457,9 +462,14 @@ fun EnemyCard(state: GameUiState, modifier: Modifier = Modifier) {
                 modifier = Modifier.fillMaxWidth(),
                 height = 14.dp
             )
-            Text(
+            GradientText(
                 text = "${maxOf(0, state.enemyHp)} / ${state.enemyMaxHp}",
-                color = Color(0xFF94a3b8), fontSize = 9.sp,
+                brush = when {
+                    enemyHpPct > 0.5f -> HpHighTextBrush
+                    enemyHpPct > 0.2f -> GoldTextBrush
+                    else              -> HpLowTextBrush
+                },
+                fontSize = 9.sp,
                 modifier = Modifier.padding(top = 3.dp)
             )
 
@@ -788,18 +798,26 @@ fun CombatLogPanel(state: GameUiState, vm: GameViewModel) {
             .take(8)
 
         filtered.forEachIndexed { i, e ->
-            Text(
-                text = e.text,
-                color = when {
-                    i == 0 && e.type == "big"   -> GoldColor
-                    i == 0 && e.type == "relic" -> RibbonGreen
-                    i == 0                      -> TextPrimary
-                    else                        -> TextMuted
-                },
-                fontSize = 9.sp,
-                lineHeight = 12.sp,
-                modifier = Modifier.padding(bottom = 2.dp)
-            )
+            if (e.type == "big") {
+                Text(
+                    text = e.text,
+                    style = textShadowStyle(9.sp, GoldColor),
+                    lineHeight = 12.sp,
+                    modifier = Modifier.padding(bottom = 2.dp)
+                )
+            } else {
+                Text(
+                    text = e.text,
+                    color = when {
+                        i == 0 && e.type == "relic" -> RibbonGreen
+                        i == 0                      -> TextPrimary
+                        else                        -> TextMuted
+                    },
+                    fontSize = 9.sp,
+                    lineHeight = 12.sp,
+                    modifier = Modifier.padding(bottom = 2.dp)
+                )
+            }
         }
     }
 }
@@ -1023,7 +1041,7 @@ fun DeadOverlay(state: GameUiState, vm: GameViewModel) {
                 modifier = Modifier.padding(bottom = 1.dp)
             ) {
                 GameIcon(iconId = "gold", tint = GoldColor, size = 12.dp)
-                Text("+${fmtN(state.runGold)}", color = GoldColor, fontSize = 12.sp)
+                GradientText(text = "+${fmtN(state.runGold)}", brush = GoldTextBrush, fontSize = 12.sp)
             }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -1031,7 +1049,7 @@ fun DeadOverlay(state: GameUiState, vm: GameViewModel) {
                 modifier = Modifier.padding(bottom = 12.dp)
             ) {
                 GameIcon(iconId = "soul", tint = SoulsColor, size = 12.dp)
-                Text("+${fmtN(state.runSouls)}", color = SoulsColor, fontSize = 12.sp)
+                GradientText(text = "+${fmtN(state.runSouls)}", brush = SoulsTextBrush, fontSize = 12.sp)
             }
             Button(
                 onClick = { vm.returnToHub() },
