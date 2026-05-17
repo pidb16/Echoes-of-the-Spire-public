@@ -105,9 +105,9 @@ fun TopInfoBar(state: GameUiState) {
             horizontalArrangement = Arrangement.spacedBy(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("💰${fmtN(state.gold)}", color = GoldColor, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-            Text("💜${fmtN(state.souls)}", color = SoulsColor, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-            Text("🎀${state.ribbons}", color = RibbonGreen, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+            StatBadge("gold",   fmtN(state.gold),         GoldColor)
+            StatBadge("soul",   fmtN(state.souls),         SoulsColor)
+            StatBadge("ribbon", state.ribbons.toString(),  RibbonGreen)
         }
 
         Text(
@@ -115,8 +115,9 @@ fun TopInfoBar(state: GameUiState) {
                 "F${state.runFloor} · ${biome.name}"
             else
                 "Echoes of the Spire",
-            color = AccentIndigo,
-            fontSize = 10.sp,
+            color = AccentColor,
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = CinzelFamily,
             letterSpacing = 1.sp
         )
     }
@@ -152,7 +153,7 @@ fun OfflineRewardDialog(
             modifier = Modifier
                 .clip(RoundedCornerShape(20.dp))
                 .background(Color(0xFF0f1628))
-                .border(2.dp, AccentIndigo, RoundedCornerShape(20.dp))
+                .border(2.dp, AccentColor, RoundedCornerShape(20.dp))
                 .padding(26.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -162,6 +163,7 @@ fun OfflineRewardDialog(
                 color = Color(0xFFc4b5fd),
                 fontWeight = FontWeight.Bold,
                 fontSize = 17.sp,
+                fontFamily = CinzelFamily,
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             Text(
