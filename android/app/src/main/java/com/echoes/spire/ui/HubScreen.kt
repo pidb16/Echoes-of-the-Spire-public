@@ -308,16 +308,16 @@ fun ExpeditionTab(state: GameUiState, vm: GameViewModel) {
             )
         }
         val paths = listOf(
-            Triple("balanced", "⚖️", "Balanced"),
-            Triple("gold",     "💰", "Gold"),
-            Triple("relics",   "🎁", "Relics"),
-            Triple("elite",    "👹", "Elites")
+            Triple("balanced", "shield",    "Balanced"),
+            Triple("gold",     "gold",      "Gold"),
+            Triple("relics",   "lightning", "Relics"),
+            Triple("elite",    "skull",     "Elites")
         )
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
-            paths.forEach { (id, icon, label) ->
+            paths.forEach { (id, iconId, label) ->
                 val active = state.oracle1 == id
                 Column(
                     modifier = Modifier
@@ -336,8 +336,8 @@ fun ExpeditionTab(state: GameUiState, vm: GameViewModel) {
                         .padding(7.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(icon, fontSize = 14.sp)
-                    Text(label, color = Color(0xFF94a3b8), fontSize = 8.sp,
+                    GameIcon(iconId = iconId, tint = if (active) AccentColor else TextMuted, size = 18.dp)
+                    Text(label, color = if (active) AccentColor else TextMuted, fontSize = 8.sp,
                         modifier = Modifier.padding(top = 2.dp))
                 }
             }
@@ -799,13 +799,25 @@ fun GlassCard(
     borderColor: Color = BorderColor,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color(0x14FFFFFF))
-            .border(1.dp, borderColor, RoundedCornerShape(12.dp))
-            .padding(10.dp)
-    ) {
-        content()
+    Box(modifier = modifier.clip(RoundedCornerShape(12.dp))) {
+        // Blurred foundational background layer
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(Color(0xFF0A0E1A).copy(alpha = 0.85f))
+                .blur(radius = 16.dp)
+        )
+        // Frosted foreground block
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(listOf(Color(0x0CFFFFFF), Color(0x120A0E1A)))
+                )
+                .border(1.dp, borderColor, RoundedCornerShape(12.dp))
+                .padding(10.dp)
+        ) {
+            content()
+        }
     }
 }

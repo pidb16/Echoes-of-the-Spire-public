@@ -18,6 +18,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -65,6 +66,7 @@ fun StatusChip(emoji: String, label: String, color: Color) {
         "❄️" -> "frost"
         "💫" -> "stun"
         "⚡" -> "lightning"
+        "💥" -> "lightning"
         else -> null
     }
     Row(
@@ -606,10 +608,10 @@ fun BurstSection(state: GameUiState, vm: GameViewModel, burstReady: Boolean) {
                 modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 48.dp),
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFb45309),
-                    contentColor   = Color.White,
-                    disabledContainerColor = Color(0xFF1e293b),
-                    disabledContentColor   = Color(0xFF374151)
+                    containerColor = GoldColor,
+                    contentColor   = Color.Black,
+                    disabledContainerColor = Color(0xFF1E293B),
+                    disabledContentColor   = Color(0xFF475569)
                 )
             ) {
                 Row(
@@ -634,10 +636,10 @@ fun BurstSection(state: GameUiState, vm: GameViewModel, burstReady: Boolean) {
             modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 48.dp),
             shape = RoundedCornerShape(10.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF1e293b),
-                contentColor   = Color(0xFF374151),
-                disabledContainerColor = Color(0xFF1e293b),
-                disabledContentColor   = Color(0xFF374151)
+                containerColor = Color(0xFF1E293B),
+                contentColor   = Color(0xFF475569),
+                disabledContainerColor = Color(0xFF1E293B),
+                disabledContentColor   = Color(0xFF475569)
             )
         ) {
             Row(
@@ -656,18 +658,39 @@ fun BurstSection(state: GameUiState, vm: GameViewModel, burstReady: Boolean) {
     }
 }
 
+// ─── RunGlassCard — frosted glass primitive for live progression panels ───────
+
+@Composable
+fun RunGlassCard(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Box(modifier = modifier.clip(RoundedCornerShape(12.dp))) {
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(Color(0xFF0A0E1A).copy(alpha = 0.85f))
+                .blur(radius = 16.dp)
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(listOf(Color(0x0CFFFFFF), Color(0x120A0E1A)))
+                )
+                .border(1.dp, BorderColor, RoundedCornerShape(12.dp))
+                .padding(9.dp)
+        ) {
+            content()
+        }
+    }
+}
+
 // ─── Relics + Blessings Panel ─────────────────────────────────────────────────
 
 @Composable
 fun RelicsBlessingsPanel(state: GameUiState) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color(0x14FFFFFF))
-            .border(1.dp, BorderColor, RoundedCornerShape(12.dp))
-            .padding(9.dp)
-    ) {
+    RunGlassCard(modifier = Modifier.fillMaxWidth()) {
         if (state.heroRelics.isNotEmpty()) {
             Text(
                 "RELICS",
@@ -743,14 +766,7 @@ fun RelicsBlessingsPanel(state: GameUiState) {
 fun CombatLogPanel(state: GameUiState, vm: GameViewModel) {
     val logFilters = listOf("all", "big", "relics")
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color(0x14FFFFFF))
-            .border(1.dp, BorderColor, RoundedCornerShape(12.dp))
-            .padding(9.dp)
-    ) {
+    RunGlassCard(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(bottom = 5.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
