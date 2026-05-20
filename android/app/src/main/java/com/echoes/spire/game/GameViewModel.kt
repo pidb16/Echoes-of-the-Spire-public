@@ -96,7 +96,11 @@ data class GameUiState(
     val soulsPerMin: Double = 0.0,
     val heroAttackProgress: Float = 0f,
     val enemyAttackProgress: Float = 0f,
-    val offlineReward: OfflineReward? = null
+    val offlineReward: OfflineReward? = null,
+    // Animation events (transient, not persisted)
+    val damageEvents: List<com.echoes.spire.data.DamageEvent> = emptyList(),
+    val heroHitSeq: Int = 0,
+    val enemyDefeated: Boolean = false
 )
 
 data class OfflineReward(val gold: Int, val souls: Int, val floors: Int)
@@ -473,6 +477,12 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 if (anyCrit) addLog(rs, "💥 CRIT! ${fmtN(totalDmg)} damage!", "big")
                 if (hero.cls == "shadowblade" && hero.stealthReady) addLog(rs, "🌑 Stealth ready!", "relic")
 
+                // Emit floating damage number event
+                val dmgEvt = DamageEvent(System.nanoTime(), totalDmg, anyCrit)
+                _state.value = _state.value.copy(
+                    damageEvents = (_state.value.damageEvents + dmgEvt).takeLast(5)
+                )
+
                 // Poison buildup
                 if (!enemy.poisoned) {
                     val ab = hero.arcane * 0.9 + (if (hero.hasRelic("arcaneCoil")) 13.0 else 0.0)
@@ -536,6 +546,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             hero.hp = max(0, hero.hp - edmg)
+            // Trigger hero hit flash animation
+            _state.value = _state.value.copy(heroHitSeq = _state.value.heroHitSeq + 1)
 
             // HP Regen blessing
             if (hero.hasBlessing("hpRegen")) {
@@ -640,6 +652,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val nextFloor = currentFloor + 1
         rs.floor = nextFloor
 
+        // Show defeated indicator immediately
+        _state.value = _state.value.copy(enemyDefeated = true)
+
         // Update best floor
         if (nextFloor > s.bestFloor) {
             _state.value = _state.value.copy(bestFloor = nextFloor)
@@ -690,7 +705,12 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
-        spawnFloor(nextFloor)
+        // Null enemy prevents combat tick from re-triggering; brief pause for defeated animation
+        rs.enemy = null
+        viewModelScope.launch {
+            delay(700L)
+            spawnFloor(nextFloor)
+        }
     }
 
     private fun onHeroDead() {
@@ -720,6 +740,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     private fun spawnFloor(fl: Int) {
         val rs = runState ?: return
         val hero = rs.hero
+        _state.value = _state.value.copy(enemyDefeated = false)
 
         // Blood Forged Anvil — lose 2 max HP per floor
         if (hero.relics.any { it.id == "bloodForgedAnvil" }) {
@@ -758,6 +779,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         enemy.hp = max(0, enemy.hp - dmg)
         rs.burstCharge = 0
         addLog(rs, "⚡ Burst Strike! ${fmtN(dmg)} dmg!", "big")
+        val burstEvt = DamageEvent(System.nanoTime(), dmg, isBurst = true)
+        _state.value = _state.value.copy(
+            damageEvents = (_state.value.damageEvents + burstEvt).takeLast(5)
+        )
         if (enemy.hp <= 0) { onEnemyKilled(); return }
         publishRunState()
     }

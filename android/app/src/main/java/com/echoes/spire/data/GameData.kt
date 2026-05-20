@@ -294,6 +294,8 @@ data class EnemyState(
 
 data class LogEntry(val text: String, val type: String, val floor: Int)
 
+data class DamageEvent(val id: Long, val amount: Int, val isCrit: Boolean = false, val isBurst: Boolean = false)
+
 enum class RunPhase { FIGHTING, BLESSING, RELIC, MILESTONE, DEAD }
 
 data class RunState(

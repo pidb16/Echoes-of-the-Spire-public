@@ -37,6 +37,70 @@ import com.echoes.spire.game.GameUiState
 import com.echoes.spire.game.GameViewModel
 import com.echoes.spire.ui.theme.*
 
+// ─── Floating damage number helpers ──────────────────────────────────────────
+
+private class FloatingDamage(
+    val id: Long,
+    val text: String,
+    val color: Color,
+    val offset: Animatable<Float, AnimationVector1D>,
+    val alpha: Animatable<Float, AnimationVector1D>
+)
+
+@Composable
+fun FloatingDamageNumbers(events: List<com.echoes.spire.data.DamageEvent>, modifier: Modifier = Modifier) {
+    val scope = rememberCoroutineScope()
+    val seen  = remember { mutableSetOf<Long>() }
+    val live  = remember { mutableStateListOf<FloatingDamage>() }
+
+    LaunchedEffect(events) {
+        for (evt in events) {
+            if (seen.add(evt.id)) {
+                val text = when {
+                    evt.isBurst -> "⚡ ${fmtN(evt.amount)}"
+                    evt.isCrit  -> "CRIT!  ${fmtN(evt.amount)}"
+                    else        -> fmtN(evt.amount)
+                }
+                val color = when {
+                    evt.isBurst -> GoldColor
+                    evt.isCrit  -> Color(0xFFf97316)
+                    else        -> Color(0xFFe2e8f0)
+                }
+                val fd = FloatingDamage(
+                    id     = evt.id,
+                    text   = text,
+                    color  = color,
+                    offset = Animatable(0f),
+                    alpha  = Animatable(1f)
+                )
+                live.add(fd)
+                scope.launch {
+                    launch { fd.offset.animateTo(-76f, tween(1100, easing = FastOutSlowInEasing)) }
+                    delay(380)
+                    fd.alpha.animateTo(0f, tween(720))
+                    live.remove(fd)
+                }
+            }
+        }
+        if (seen.size > 20) seen.clear()
+    }
+
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        live.forEach { fd ->
+            Text(
+                text = fd.text,
+                style = textShadowStyle(
+                    fontSize   = if (fd.text.startsWith("CRIT")) 15.sp else 13.sp,
+                    color      = fd.color.copy(alpha = fd.alpha.value),
+                    fontWeight = FontWeight.ExtraBold,
+                    fontFamily = CinzelFamily
+                ),
+                modifier = Modifier.offset(y = fd.offset.value.dp)
+            )
+        }
+    }
+}
+
 // ─── Icon Circle ──────────────────────────────────────────────────────────────
 
 @Composable
@@ -253,6 +317,15 @@ fun HeroCard(state: GameUiState, heroHpPct: Float, biomeAccent: Color, modifier:
     val wep = WEAPONS[state.heroWeapon]
     val staminaPct = if (state.heroStaminaMax > 0) state.heroStamina.toFloat() / state.heroStaminaMax else 0f
 
+    // Hit flash animation
+    val hitFlash = remember { Animatable(0f) }
+    LaunchedEffect(state.heroHitSeq) {
+        if (state.heroHitSeq > 0) {
+            hitFlash.snapTo(0.55f)
+            hitFlash.animateTo(0f, tween(420, easing = FastOutLinearInEasing))
+        }
+    }
+
     DepthCard(
         accentColor = biomeAccent,
         modifier = modifier,
@@ -376,6 +449,15 @@ fun HeroCard(state: GameUiState, heroHpPct: Float, biomeAccent: Color, modifier:
                 }
             }
         }
+        // Red hit flash overlay
+        if (hitFlash.value > 0.01f) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clip(RoundedCornerShape(13.dp))
+                    .background(Color(0xFFEF4444).copy(alpha = hitFlash.value))
+            )
+        }
     }
 }
 
@@ -383,6 +465,33 @@ fun HeroCard(state: GameUiState, heroHpPct: Float, biomeAccent: Color, modifier:
 
 @Composable
 fun EnemyCard(state: GameUiState, modifier: Modifier = Modifier) {
+    // Defeated overlay — shown for ~700ms between enemy kills
+    if (state.enemyDefeated) {
+        DepthCard(
+            accentColor = HpLow,
+            modifier = modifier.defaultMinSize(minHeight = 120.dp),
+            borderBrush = DangerBorderGradient
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 28.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                GameIcon(iconId = "skull", tint = HpLow, size = 36.dp, glowRadius = 8.dp)
+                GradientText(
+                    text = "DEFEATED",
+                    brush = HpLowTextBrush,
+                    fontSize = 14.sp,
+                    fontFamily = CinzelFamily,
+                    letterSpacing = 3.sp
+                )
+            }
+        }
+        return
+    }
+
     if (state.enemyName.isEmpty()) {
         Box(
             modifier = modifier.fillMaxWidth().defaultMinSize(minHeight = 120.dp),
@@ -514,6 +623,11 @@ fun EnemyCard(state: GameUiState, modifier: Modifier = Modifier) {
                 stunned = state.enemyStunned
             )
         }
+        // Floating damage numbers — centred on the card, animate upward
+        FloatingDamageNumbers(
+            events = state.damageEvents,
+            modifier = Modifier.matchParentSize()
+        )
     }
 }
 
